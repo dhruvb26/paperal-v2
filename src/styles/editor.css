@@ -1,0 +1,225 @@
+.tiptap {
+    > * + * {
+      margin-top: 0.75em;
+    }
+  
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      line-height: 1.3;
+      font-weight: 600;
+      margin: 1.5rem 0 1rem;
+      text-wrap: pretty;
+    }
+  
+    h1 {
+      font-size: 2rem;
+    }
+  
+    h2 {
+      font-size: 1.75rem;
+    }
+  
+    h3 {
+      font-size: 1.5rem;
+    }
+  
+    h4 {
+      font-size: 1.25rem;
+    }
+  
+    h5,
+    h6 {
+      font-size: 1rem;
+    }
+  
+    a {
+      color: oklch(54.6% 0.245 262.881);
+      cursor: pointer;
+  
+      &:hover {
+        color: oklch(62.3% 0.214 259.815);
+      }
+    }
+  
+    .custom-link {
+      color: oklch(54.6% 0.245 262.881);
+      cursor: pointer;
+  
+      &:hover {
+        color: oklch(62.3% 0.214 259.815);
+      }
+    }
+  
+    code {
+      background-color: rgba(#616161, 0.1);
+      color: #ff0000;
+      border-radius: 0.25rem;
+      // color: currentColor;
+      font-family: 'JetBrainsMono', monospace;
+      font-size: 0.875em;
+      padding: 0.2em 0.4em;
+    }
+  
+    pre {
+      background: hsl(var(--background));
+      border: 1px solid hsl(var(--border));
+      border-radius: 0.5rem;
+      color: currentColor;
+      font-family: 'JetBrainsMono', monospace;
+      margin: 1rem 0;
+      padding: 0.75rem 1rem;
+      overflow-x: auto;
+  
+      code {
+        background: none;
+        border: none;
+        color: inherit;
+        font-size: 0.875em;
+        padding: 0;
+      }
+    }
+  
+    mark {
+      background-color: #faf594;
+      border-radius: 0.25rem;
+      box-decoration-break: clone;
+      padding: 0.1rem 0.3rem;
+    }
+  
+    blockquote {
+      border-left: 3px solid hsl(var(--border));
+      color: hsl(var(--muted-foreground));
+      margin: 1rem 0;
+      padding: 0.5rem 0 0.5rem 1rem;
+    }
+  
+    hr {
+      border: none;
+      border-top: 2px solid hsl(var(--border));
+      margin: 2rem 0;
+    }
+  
+    p {
+      margin: 0.5rem 0;
+      line-height: 1.6;
+    }
+  
+    ul,
+    ol {
+      margin: 0.5rem 0;
+      padding-left: 1.25rem;
+      line-height: 1.6;
+    }
+  
+    ul {
+      list-style: disc;
+  
+      ul {
+        list-style: circle;
+  
+        ul {
+          list-style: square;
+        }
+      }
+    }
+
+    p.is-empty::before {
+      color: oklch(0.708 0 0);
+      content: attr(data-placeholder);
+      float: left;
+      height: 0;
+      pointer-events: none;
+    }
+    
+    img {
+      display: block;
+      height: auto;
+      max-height: 250px;
+      margin: 1.5rem 0;
+      max-width: 100%;
+  
+      &.ProseMirror-selectednode {
+        outline: 1px solid oklch(0.708 0 0);
+      }
+    }
+  
+    ol {
+      list-style: decimal;
+  
+      ol {
+        list-style: lower-alpha;
+  
+        ol {
+          list-style: lower-roman;
+        }
+      }
+    }
+  
+    li {
+      margin: 0.25rem 0;
+      padding-left: 0.25rem;
+  
+      p {
+        margin: 0;
+      }
+    }
+  
+    ul[data-type="taskList"] {
+      list-style: none;
+      padding: 0;
+
+      li {
+        display: flex;
+        gap: 0.5rem;
+        margin: 0.5rem 0;
+        padding-left: 0;
+
+        > label {
+          user-select: none;
+          margin: 0;
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+          
+          input[type="checkbox"] {
+            margin: 0;
+            cursor: pointer;
+            width: 1rem;
+            height: 1rem;
+          }
+        }
+
+        > div {
+          flex: 1;
+          margin: 0;
+          
+          p {
+            margin: 0;
+          }
+        }
+      }
+    }
+  }
+  
+.ProseMirror:focus {
+  outline: none;
+}
+
+.ProseMirror {
+  outline: none;
+}
+
+.selection-highlight {
+  background-color: var(--selection-background, oklch(88.2% 0.059 254.128));
+  color: var(--selection-color, inherit);
+  border-radius: 0px;
+  padding: 0.1em 0;
+  margin: -0.1em 0;
+  line-height: inherit;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
