@@ -102,10 +102,10 @@
       border-top: 2px solid hsl(var(--border));
       margin: 2rem 0;
     }
-  
     p {
       margin: 0.5rem 0;
       line-height: 1.6;
+      font-size: 0.875rem; /* text-sm from Tailwind */
     }
   
     ul,

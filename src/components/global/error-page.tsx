@@ -1,4 +1,4 @@
-import { SerializableError } from '@/utils/server-action'
+import { SerializableError } from '@/utils/server-result'
 
 export default function ErrorPage({ error }: { error: SerializableError }) {
   return (

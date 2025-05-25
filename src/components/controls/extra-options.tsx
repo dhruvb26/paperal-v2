@@ -22,7 +22,7 @@ import {
   Clock,
 } from 'lucide-react'
 import type { Editor } from '@tiptap/core'
-import { uploadImage } from '@/actions/upload'
+import { uploadImage } from '@/backend/actions/upload'
 
 export default function ExtraOptions({ editor }: { editor: Editor }) {
   const handleImageUpload = async (

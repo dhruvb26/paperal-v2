@@ -1,5 +1,5 @@
 import Tiptap from '@/components/tip-tap'
-import { getDocument } from '@/actions/document'
+import { getDocument } from '@/backend/actions/document'
 import ErrorPage from '@/components/global/error-page'
 
 export default async function EditorPage({ params }: any) {

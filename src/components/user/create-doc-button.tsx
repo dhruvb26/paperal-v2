@@ -1,5 +1,5 @@
 'use client'
-import { createDocument } from '@/actions/document'
+import { createDocument } from '@/backend/actions/document'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
@@ -71,11 +71,7 @@ export default function CreateDocButton() {
             autoFocus
           />
           <div className="flex justify-end">
-            <Button
-              className="bg-[color:var(--custom)] hover:bg-[color:var(--custom)]/80"
-              type="submit"
-              isLoading={isLoading}
-            >
+            <Button type="submit" isLoading={isLoading}>
               Create
             </Button>
           </div>

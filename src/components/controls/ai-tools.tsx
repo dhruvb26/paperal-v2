@@ -1,5 +1,4 @@
 'use client'
-import type { Editor } from '@tiptap/core'
 import { Button } from '@/components/ui/button'
 import { useEffect, useState, useRef } from 'react'
 import { ArrowCounterClockwiseIcon } from '@phosphor-icons/react'

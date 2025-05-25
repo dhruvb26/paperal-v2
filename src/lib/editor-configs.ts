@@ -25,6 +25,7 @@ export const customLinkConfig = {
   },
   onClick: ({ href, data }: { href: string; data: CustomLinkData }) => {
     // TODO: Implement custom link functionality, probably opens a new sidebar
+    console.log(href, data)
   },
 }
 

@@ -29,7 +29,7 @@ export function AppSidebar() {
     <>
       <Sidebar className="border-r">
         <SidebarHeader className="flex flex-row items-end justify-between p-4">
-          <div className="w-8 h-8 bg-blue-600 rounded-full"></div>
+          <div className="w-8 h-8 bg-accent rounded-full"></div>
           <div className="flex flex-row items-center gap-2">
             <UploadPdfButton />
             <CreateDocButton />
@@ -43,7 +43,7 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <Link href={item.url}>
-                        <item.icon className="stroke-[1.5]" />
+                        <item.icon className="stroke-2" />
                         <span className="font-medium">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
