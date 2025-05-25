@@ -24,6 +24,7 @@ export const ourFileRouter = {
       const handle = await tasks.trigger<typeof processUrlTask>('process-url', {
         url: file.ufsUrl,
         userId: metadata.userId,
+        saveToLibrary: false,
       })
 
       return {

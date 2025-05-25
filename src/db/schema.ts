@@ -38,3 +38,12 @@ export const chunksTable = pgTable('chunks', {
   bbox: jsonb('bbox').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
+
+export const libraryTable = pgTable('library', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: varchar('user_id').default(sql`NULL`),
+  title: text().notNull(),
+  description: text().notNull(),
+  metadata: jsonb('metadata').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})

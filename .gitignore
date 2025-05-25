@@ -44,3 +44,4 @@ next-env.d.ts
 /.clerk/
 
 .trigger
+/src/app/(protected)/sandbox

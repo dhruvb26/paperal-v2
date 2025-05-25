@@ -6,10 +6,12 @@ import { nanoid } from 'nanoid'
 import { processChunksWithBBox } from '@/utils/bbox-utils'
 import { createChunks } from '@/backend/actions/chunk'
 import { getMeConfig } from '@/utils/chunking-config'
+import { addToLibrary } from '@/backend/actions/library'
 
 interface ProcessUrlPayload {
   url: string
   userId: string
+  saveToLibrary?: boolean
 }
 
 export const processUrlTask = task({
@@ -24,6 +26,8 @@ export const processUrlTask = task({
       const PINECONE_INDEX_NAME = 'paperal'
       const PINECONE_INDEX_HOST =
         'https://paperal-vt9kq6y.svc.aped-4627-b74a.pinecone.io'
+      const PINECONE_SPARSE_INDEX_HOST =
+        'https://paperal-sparse-vt9kq6y.svc.aped-4627-b74a.pinecone.io'
       const pc = new Pinecone({
         apiKey: PINECONE_API_KEY,
       })
@@ -77,6 +81,44 @@ export const processUrlTask = task({
       const processed = await processChunks(outputChunks)
 
       const { title, info, chunks } = processed
+
+      if (payload.saveToLibrary) {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/metadata`,
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              content: info,
+            }),
+          }
+        )
+        const data = await res.json()
+
+        const metadata = {
+          title: data.title,
+          file_url: payload.url,
+          authors: data.authors,
+          citations: data.citations,
+          year: data.year || null,
+        }
+
+        await addToLibrary(data.title, data.description, metadata)
+
+        const denseIndex = pc
+          .index('paperal', PINECONE_INDEX_HOST)
+          .namespace('library')
+
+        const sparseIndex = pc
+          .index('paperal-sparse', PINECONE_SPARSE_INDEX_HOST)
+          .namespace('library')
+
+        const pineconeUpserts = []
+        for (let i = 0; i < chunks.length; i += 96) {
+          const batch = chunks.slice(i, i + 96)
+          pineconeUpserts.push(denseIndex.upsertRecords(batch))
+          pineconeUpserts.push(sparseIndex.upsertRecords(batch))
+        }
+      }
 
       const namespace = `${processed.title
         .replace(/\s+/g, '-')
