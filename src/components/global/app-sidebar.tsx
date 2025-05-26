@@ -13,7 +13,7 @@ import {
 import { Home } from 'lucide-react'
 import CreateDocButton from '@/components/user/create-doc-button'
 import UserDocList from '@/components/global/user-doc-list'
-import UploadPdfButton from '@/components/user/upload-pdf-button'
+// import UploadPdfButton from '@/components/user/upload-pdf-button'
 import Link from 'next/link'
 
 const items = [
@@ -31,7 +31,6 @@ export function AppSidebar() {
         <SidebarHeader className="flex flex-row items-end justify-between p-4">
           <div className="w-8 h-8 bg-accent rounded-full"></div>
           <div className="flex flex-row items-center gap-2">
-            <UploadPdfButton />
             <CreateDocButton />
           </div>
         </SidebarHeader>
