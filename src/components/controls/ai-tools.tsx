@@ -2,10 +2,10 @@
 import { Button } from '@/components/ui/button'
 import { useEffect, useState, useRef } from 'react'
 import { ArrowCounterClockwiseIcon } from '@phosphor-icons/react'
-import { UserPen, Pen, Check, X, ArrowUp, ArrowDown } from 'lucide-react'
+import { Pen, Check, X, ArrowUp, ArrowDown } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
-import { AICompletion } from '@/components/extension/autocomplete'
+import { AICompletion } from '@/components/extension/ai'
 import { useEditorStore } from '@/stores/editor-store'
 
 const AITools = () => {
@@ -168,11 +168,11 @@ const AITools = () => {
                   </Button>
                 </div>
               ) : (
-                <div className="flex flex-row items-center justify-between absolute bottom-2 left-2 right-2">
-                  <Button variant="outline" size="sm" onClick={() => {}}>
+                <div className="flex flex-row items-center justify-end absolute bottom-2 left-2 right-2">
+                  {/* <Button variant="outline" size="sm" onClick={() => {}}>
                     <UserPen size={20} />
                     <span>Write like me</span>
-                  </Button>
+                  </Button> */}
 
                   <Button
                     type="submit"

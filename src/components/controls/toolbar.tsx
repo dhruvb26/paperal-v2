@@ -9,18 +9,19 @@ import TextAlignOption from '@/components/controls/text-align-option'
 import { TextItalicIcon } from '@phosphor-icons/react'
 import ExtraOptions from '@/components/controls/extra-options'
 import TooltipWrapper from '@/components/ui/tooltip-wrapper'
-import { Redo, Undo } from 'lucide-react'
+import { IndentIncrease, Redo, Undo } from 'lucide-react'
 import ListControls from '@/components/controls/list-style-select'
 import { useEditorStore } from '@/stores/editor-store'
 import { updateDocument } from '@/backend/actions/document'
 import { usePathname } from 'next/navigation'
 import { toast } from 'sonner'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import debounce from 'lodash/debounce'
 
 const Toolbar = () => {
   const { editor } = useEditorStore()
   const pathname = usePathname()
+  const [isGenerating, setIsGenerating] = useState(false)
 
   const debouncedSave = useCallback(
     debounce(async (content: string) => {
@@ -60,6 +61,17 @@ const Toolbar = () => {
       return
     }
     toast.success('Document saved successfully')
+  }
+
+  const handleAutoComplete = () => {
+    if (!editor) return
+
+    setIsGenerating(true)
+    editor.commands.sendForSuggestion({
+      onUpdate: () => {
+        setIsGenerating(false)
+      },
+    })
   }
 
   if (!editor) return null
@@ -147,6 +159,19 @@ const Toolbar = () => {
           <div className="border-l border-border h-6 hidden sm:block" />
           <ExtraOptions editor={editor} />
           <div className="border-l border-border h-6 hidden sm:block" />
+
+          <TooltipWrapper tooltip="Auto-complete">
+            <Button
+              variant={'ghost'}
+              size={'icon'}
+              onClick={handleAutoComplete}
+              disabled={isGenerating}
+              className={isGenerating ? 'animate-pulse' : ''}
+            >
+              <IndentIncrease className={isGenerating ? 'animate-spin' : ''} />
+            </Button>
+          </TooltipWrapper>
+
           <Button variant={'ghost'} size={'sm'} onClick={handleSave}>
             Save
           </Button>

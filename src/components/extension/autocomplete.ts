@@ -1,263 +1,143 @@
-import { Extension } from '@tiptap/core'
+import { Extension, Command } from '@tiptap/core'
 
-export type AICompletion = {
-  text: string
-  onAccept: () => void
-  onReject: () => void
-  onInsertBelow: () => void
-}
-
-declare module '@tiptap/core' {
-  interface Commands<ReturnType> {
-    ai: {
-      send: (params: {
-        text: string
-        instructions: string
-        onUpdate?: (completion: AICompletion) => void
-      }) => ReturnType
+interface AutoCompleteAPIResponse {
+  success: boolean
+  error: string | null
+  data: {
+    response: {
+      text: string
+      is_referenced: boolean
+      href: string | null
+      citations?: {
+        'in-text': string
+      }
+      context?: string
     }
   }
 }
 
-export const AI = Extension.create({
-  name: 'ai',
+interface AutoCompleteParams {
+  text?: string
+  instructions?: string
+  onUpdate?: (completion: any) => void
+}
+
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    autocomplete: {
+      sendForSuggestion: (params: AutoCompleteParams) => ReturnType
+      acceptSuggestion: () => ReturnType
+      rejectSuggestion: () => ReturnType
+    }
+  }
+}
+
+export const AutoComplete = Extension.create({
+  name: 'autoComplete',
+  priority: 101,
+
   addOptions() {
     return {
-      defaultModel: 'gpt-4o-mini',
+      endpoint: `${process.env.NEXT_PUBLIC_API_URL}/generate`,
+      acceptKey: 'ArrowRight',
+      suggestionDebounce: 1000,
+      previousTextLength: 4000,
     }
   },
 
   addCommands() {
     return {
-      send:
-        (params) =>
-        ({ editor }) => {
-          const { text, instructions, onUpdate } =
-            typeof params === 'string' ? JSON.parse(params) : params
+      sendForSuggestion: (params: AutoCompleteParams): Command => {
+        return ({ editor }) => {
+          const content = editor.getText()
+          const { from, to } = editor.state.selection
+          const selectedText = editor.state.doc.textBetween(from, to)
 
-          if (!instructions) {
-            console.error('Missing instructions')
-            return false
-          }
-
-          const systemPrompt = 'You are a helpful assistant.'
-          const userPrompt = `Here is the text written by the user: ${text} \n\n ${instructions}`
-
-          const startPos = editor.state.selection.from
-          const endPos = editor.state.selection.to
-          let completion = ''
-          let insertedContentLength = 0
-          let hasReplacedText = false
-          const originalText = text
-
-          const updateCompletion = (
-            completion: string | null,
-            handlers?: {
-              onAccept: () => void
-              onReject: () => void
-              onInsertBelow: () => void
-            }
-          ) => {
-            if (onUpdate) {
-              onUpdate(
-                completion
-                  ? {
-                      text: completion,
-                      ...handlers,
-                    }
-                  : null
-              )
-            }
-          }
-
-          const handleAccept = () => {
-            editor
-              .chain()
-              .focus()
-              .setTextSelection({
-                from: startPos,
-                to: startPos + insertedContentLength,
-              })
-              .unsetMark('textStyle')
-              .run()
-
-            updateCompletion(null)
-          }
-
-          const handleReject = () => {
-            editor
-              .chain()
-              .focus()
-              .deleteRange({
-                from: startPos,
-                to: startPos + insertedContentLength,
-              })
-              .insertContent({
-                type: 'text',
-                text: originalText,
-              })
-              .run()
-
-            updateCompletion(null)
-          }
-
-          const handleInsertBelow = () => {
-            // Restore original text
-            editor
-              .chain()
-              .focus()
-              .deleteRange({
-                from: startPos,
-                to: startPos + insertedContentLength,
-              })
-              .insertContent({
-                type: 'text',
-                text: originalText,
-              })
-              .run()
-
-            // Insert completion below
-            editor
-              .chain()
-              .focus()
-              .setTextSelection(startPos + originalText.length)
-              .insertContent({
-                type: 'text',
-                text: '\n\n' + completion,
-              })
-              .run()
-
-            updateCompletion(null)
-          }
-
-          fetch('https://api.openai.com/v1/chat/completions', {
+          fetch(this.options.endpoint, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
             },
             body: JSON.stringify({
-              model: this.options.defaultModel,
-              messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userPrompt },
-              ],
-              stream: true,
+              query: selectedText || content,
+              ...params,
             }),
           })
             .then((response) => {
               if (!response.ok) {
-                throw new Error(`API call failed: ${response.statusText}`)
+                throw new Error('Failed to fetch completion')
+              }
+              return response.json()
+            })
+            .then((data: AutoCompleteAPIResponse) => {
+              if (!data.success || data.error) {
+                throw new Error(data.error || 'Failed to get completion')
               }
 
-              if (!response.body) {
-                throw new Error('Response body is null')
+              const chain = editor.chain().focus()
+
+              const responseText = data.data.response.text
+              let mainText = responseText
+              let trailing = ''
+              if (responseText.endsWith('.')) {
+                mainText = responseText.slice(0, -1)
+                trailing = '.'
               }
 
-              const reader = response.body.getReader()
-              const decoder = new TextDecoder()
-              let buffer = ''
-
-              const processText = async (): Promise<void> => {
-                try {
-                  const { done, value } = await reader.read()
-
-                  if (done) {
-                    return
-                  }
-
-                  buffer += decoder.decode(value)
-                  const lines = buffer.split('\n')
-                  buffer = lines.pop() || ''
-
-                  for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                      const data = line.slice(6)
-
-                      if (data === '[DONE]') {
-                        return
-                      }
-
-                      try {
-                        const json = JSON.parse(data)
-                        const content = json.choices?.[0]?.delta?.content
-
-                        if (content) {
-                          completion += content
-
-                          // If this is the first content chunk, replace selected text first
-                          if (!hasReplacedText) {
-                            editor
-                              .chain()
-                              .focus()
-                              .deleteRange({
-                                from: startPos,
-                                to: endPos,
-                              })
-                              .insertContent({
-                                type: 'text',
-                                text: content,
-                              })
-                              .run()
-
-                            hasReplacedText = true
-                            insertedContentLength = content.length
-                          } else {
-                            // For subsequent chunks, just append to the end
-                            editor
-                              .chain()
-                              .focus()
-                              .setTextSelection(
-                                startPos + insertedContentLength
-                              )
-                              .insertContent({
-                                type: 'text',
-                                text: content,
-                              })
-                              .run()
-
-                            insertedContentLength += content.length
-                          }
-
-                          // Select the entire inserted text after each chunk
-                          editor
-                            .chain()
-                            .focus()
-                            .setTextSelection({
-                              from: startPos,
-                              to: startPos + insertedContentLength,
-                            })
-                            .run()
-
-                          // Update the suggestion using the callback
-                          updateCompletion(completion, {
-                            onAccept: handleAccept,
-                            onReject: handleReject,
-                            onInsertBelow: handleInsertBelow,
-                          })
-                        }
-                      } catch (e) {
-                        console.error('Error parsing JSON:', e)
-                      }
-                    }
-                  }
-
-                  return processText()
-                } catch (error) {
-                  console.error('Error processing stream:', error)
-                  handleReject()
+              const contentArray: any[] = [{ type: 'text', text: mainText }]
+              if (data.data.response.is_referenced && data.data.response.href) {
+                const citationText = data.data.response.citations?.['in-text']
+                if (citationText) {
+                  contentArray.push({ type: 'text', text: ' ' })
+                  contentArray.push({
+                    type: 'text',
+                    text: citationText,
+                    marks: [
+                      {
+                        type: 'customLink',
+                        attrs: {
+                          href: data.data.response.href,
+                          data: 'this is some example data.',
+                        },
+                      },
+                    ],
+                  })
+                } else {
+                  console.error('No citation text found in response')
                 }
               }
+              if (trailing) {
+                contentArray.push({ type: 'text', text: trailing })
+              }
 
-              return processText()
+              chain.insertContent(contentArray).run()
+
+              if (params.onUpdate) {
+                params.onUpdate(data.data.response)
+              }
             })
             .catch((error) => {
-              console.error('Error in streaming API call:', error)
-              handleReject()
+              console.error('Error in autocomplete:', error)
             })
 
           return true
-        },
+        }
+      },
+
+      acceptSuggestion: (): Command => {
+        return ({ editor }) => {
+          editor.chain().focus().unsetMark('textStyle').run()
+          return true
+        }
+      },
+
+      rejectSuggestion: (): Command => {
+        return ({ editor }) => {
+          const { from, to } = editor.state.selection
+          editor.chain().focus().deleteRange({ from, to }).run()
+          return true
+        }
+      },
     }
   },
 })

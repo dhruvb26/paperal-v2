@@ -18,8 +18,9 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import { CustomLinkMark } from '@/components/extension/custom-link-mark'
 import { SelectionDecoration } from '@/components/extension/selection-decoration'
-import { AI } from '@/components/extension/autocomplete'
+import { AI } from '@/components/extension/ai'
 import { KeyboardShortcuts } from '@/components/extension/keyboard-shortcuts'
+import { AutoComplete } from '@/components/extension/autocomplete'
 import { useEditorStore } from '@/stores/editor-store'
 import {
   textAlignConfig,
@@ -55,6 +56,7 @@ const Tiptap = ({ content }: { content: string }) => {
       TaskItem,
       AI,
       KeyboardShortcuts,
+      AutoComplete,
       Highlight.configure(highlightConfig),
       Link.configure(linkConfig),
       CustomLinkMark.configure(customLinkConfig),
