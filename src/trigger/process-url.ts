@@ -87,69 +87,65 @@ export const processUrlTask = task({
 
       const { title, info, chunks } = processed
 
-      if (payload.saveToLibrary) {
-        const geminiPayload = {
-          contents: [
-            {
-              parts: [
-                {
-                  text: `Based on the following document excerpt, extract the title, authors, a short description, year of publication, and create an APA style in-text citation.
-                      Return the information in a valid JSON format with these exact keys: title, description, authors (as list), citations.in_text, year
-      
-                      If you cannot determine any field with high confidence, use null for that field.
-      
-                      Document excerpt:
-                      ${info}
-      
-                      Example output format:
-                      {
-                          "title": "The Impact of AI on Modern Society",
-                          "description": "The Impact of AI on Modern Society is a paper that discusses the impact of AI on modern society. It is a paper that was published in 2024.",
-                          "authors": ["Smith, J.", "Jones, K."],
-                          "citations": {
-                              "in_text": "(Smith & Jones, 2024)"
-                          },
-                          "year": "2024"
-                      }`,
-                },
-              ],
-            },
-          ],
-        }
-
-        try {
-          const response = await fetch(
-            `${GEMINI_API_ENDPOINT}/${DEFAULT_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
+      const geminiPayload = {
+        contents: [
+          {
+            parts: [
+              {
+                text: `Based on the following document excerpt, extract the title, authors, a short description, year of publication, and create an APA style in-text citation.
+                    Return the information in a valid JSON format with these exact keys: title, description, authors (as list), citations.in_text, year
+    
+                    If you cannot determine any field with high confidence, use null for that field.
+    
+                    Document excerpt:
+                    ${info}
+    
+                    Example output format:
+                    {
+                        "title": "The Impact of AI on Modern Society",
+                        "description": "The Impact of AI on Modern Society is a paper that discusses the impact of AI on modern society. It is a paper that was published in 2024.",
+                        "authors": ["Smith, J.", "Jones, K."],
+                        "citations": {
+                            "in_text": "(Smith & Jones, 2024)"
+                        },
+                        "year": "2024"
+                    }`,
               },
-              body: JSON.stringify(geminiPayload),
-            }
-          )
+            ],
+          },
+        ],
+      }
 
-          if (!response.ok) {
-            throw new Error(`API call failed: ${response.statusText}`)
-          }
+      const response = await fetch(
+        `${GEMINI_API_ENDPOINT}/${DEFAULT_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(geminiPayload),
+        }
+      )
 
-          const data = await response.json()
+      const data = await response.json()
 
-          const dataMetadata = JSON.parse(
-            data.candidates[0].content.parts[0].text
-              .replace('```json', '')
-              .replace('```', '')
-              .trim()
-          )
+      const dataMetadata = JSON.parse(
+        data.candidates[0].content.parts[0].text
+          .replace('```json', '')
+          .replace('```', '')
+          .trim()
+      )
 
-          const metadata = {
-            title: dataMetadata.title,
-            file_url: payload.url,
-            authors: dataMetadata.authors,
-            citations: dataMetadata.citations,
-            year: dataMetadata.year,
-          }
+      const metadata = {
+        title: dataMetadata.title,
+        file_url: payload.url,
+        authors: dataMetadata.authors,
+        citations: dataMetadata.citations,
+        year: dataMetadata.year,
+      }
 
+      if (payload.saveToLibrary) {
+        try {
           await addToLibrary(data.title, data.description, metadata)
 
           const denseIndex = pc
@@ -165,6 +161,10 @@ export const processUrlTask = task({
             const batch = chunks.slice(i, i + 96)
             pineconeUpserts.push(denseIndex.upsertRecords(batch))
             pineconeUpserts.push(sparseIndex.upsertRecords(batch))
+          }
+
+          return {
+            message: 'Processed the file successfully.',
           }
         } catch (error) {
           logger.error('Error: ', { error })
@@ -192,6 +192,7 @@ export const processUrlTask = task({
         Promise.all(pineconeUpserts),
         createChunks(chunksWithBBox),
         uploadFile(payload.userId, payload.url, title, info, namespace),
+        addToLibrary(title, info, metadata, payload.userId),
       ])
 
       return {

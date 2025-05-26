@@ -15,6 +15,13 @@
       "when": 1747814712148,
       "tag": "0001_first_vulcan",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1748216542274,
+      "tag": "0002_lyrical_warbird",
+      "breakpoints": true
     }
   ]
 }

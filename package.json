@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "eslint --fix .",
-    "gen:types": "pnpm dlx supabase gen types typescript --project-id 'kyptsrrsrdqofkyljjtl' --schema public > src/lib/database.types.ts"
+    "gen:types": "pnpm dlx supabase gen types typescript --project-id 'kyptsrrsrdqofkyljjtl' --schema public > src/lib/database.types.ts",
+    "db:generate": "pnpm drizzle-kit generate",
+    "db:migrate": "pnpm drizzle-kit migrate",
+    "db:studio": "pnpm drizzle-kit studio"
   },
   "dependencies": {
     "@clerk/elements": "^0.23.28",
