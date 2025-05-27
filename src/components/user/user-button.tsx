@@ -9,6 +9,7 @@ import {
 import { currentUser } from '@clerk/nextjs/server'
 import { ModeToggleDropdownItems } from '@/components/ui/mode-toggle'
 import { SignOutButton } from '@/components/user/sign-out-button'
+import Link from 'next/link'
 
 export default async function UserButton() {
   const user = await currentUser()
@@ -34,9 +35,11 @@ export default async function UserButton() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={8}>
         <ModeToggleDropdownItems />
-        <DropdownMenuItem>
-          <Settings className="size-4 mr-2" />
-          Settings
+        <DropdownMenuItem asChild>
+          <Link href="/settings">
+            <Settings className="size-4 mr-2" />
+            Settings
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <SignOutButton />

@@ -10,7 +10,7 @@ import {
   SerializableError,
   ServerResult,
 } from '@/utils/server-result'
-import { validateUser } from './user'
+import { validateUser } from '@/backend/actions/user'
 import type { Document } from '@/types/db'
 
 const api = env.API_URL!

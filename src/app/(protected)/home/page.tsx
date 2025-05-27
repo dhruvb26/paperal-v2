@@ -22,34 +22,24 @@ export default function HomePage() {
         <span className="text-xl font-semibold">Welcome to Paperal</span>
       </div>
 
-      <div className="flex flex-col items-center gap-4">
-        <div className="flex flex-row items-center justify-center gap-2">
-          <span className="text-muted-foreground">
-            Get started by creating a new document
-          </span>
+      <div className="flex flex-col items-center gap-2">
+        <div className="text-muted-foreground flex flex-row items-center justify-center gap-2">
+          Get started by creating a new document
           <CreateDocButton />
-        </div>
-        <div className="flex flex-row text-muted-foreground items-center justify-center gap-2">
-          <div className="h-[1px] w-36 bg-muted" />
-          or
-          <div className="h-[1px] w-36 bg-muted" />
+          or upload one
+          <UploadPdfButton
+            setUploading={setUploading}
+            setRunId={setRunId}
+            setFileUrl={setFileUrl}
+          />
         </div>
         <div className="flex flex-row items-center justify-center gap-2">
-          {uploading && runId && fileUrl ? (
+          {uploading && runId && fileUrl && (
             <TaskProgress
               runId={runId}
               fileUrl={fileUrl}
               onComplete={resetTask}
             />
-          ) : (
-            <>
-              <span className="text-muted-foreground">Upload a PDF</span>
-              <UploadPdfButton
-                setUploading={setUploading}
-                setRunId={setRunId}
-                setFileUrl={setFileUrl}
-              />
-            </>
           )}
         </div>
       </div>

@@ -20,7 +20,7 @@ export default function UploadPdfButton({
         button: ({ ready }) => {
           if (ready)
             return (
-              <div className="flex items-center text-foreground">
+              <div className="flex items-center">
                 <ArrowUpFromLine size={16} />
               </div>
             )
@@ -36,7 +36,7 @@ export default function UploadPdfButton({
         toast.loading('Starting file upload')
       }}
       endpoint="pdfUploader"
-      className="ut-button:bg-accent ut-button:hover:bg-accent ut-button:size-7 ut-button:ut-uploading:bg-accent ut-button:ut-uploading:after:bg-accent/50 ut-button:text-sm ut-button:font-normal ut-button:px-3 ut-button:py-1 ut-button:outline-none ut-button:ring-0 ut-button:focus:ring-0 ut-allowed-content:hidden ut-button:focus-visible:ring-0"
+      className="ut-button:bg-accent ut-button:text-muted-foreground ut-button:hover:text-foreground ut-button:hover:bg-accent ut-button:size-7 ut-button:ut-uploading:bg-accent ut-button:ut-uploading:after:bg-accent/50 ut-button:text-sm ut-button:font-normal ut-button:px-3 ut-button:py-1 ut-button:outline-none ut-button:ring-0 ut-button:focus:ring-0 ut-allowed-content:hidden ut-button:focus-visible:ring-0"
       onClientUploadComplete={(res) => {
         toast.dismiss()
         if (res && res[0]) {
