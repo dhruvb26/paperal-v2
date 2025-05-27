@@ -32,10 +32,10 @@ export default function BoundingBox({
               hoveredChunkId === chunk.id ? 'opacity-75' : 'opacity-0'
             }`}
             style={{
-              top: chunk.bbox.top * scale,
-              left: chunk.bbox.left * scale,
-              width: chunk.bbox.width * scale,
-              height: chunk.bbox.height * scale,
+              top: `${chunk.bbox.top * scale}px`,
+              left: `${chunk.bbox.left * scale}px`,
+              width: `${chunk.bbox.width * scale}px`,
+              height: `${chunk.bbox.height * scale}px`,
             }}
             title={chunk.text}
           />

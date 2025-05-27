@@ -37,5 +37,5 @@ export const getChunks = async (url: string) => {
     throw new Error(error.message)
   }
 
-  return data
+  return data as Chunk[]
 }

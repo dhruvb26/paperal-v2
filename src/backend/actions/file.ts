@@ -7,6 +7,7 @@ import { File } from '@/types/file'
 import { auth } from '@clerk/nextjs/server'
 import { and, eq } from 'drizzle-orm'
 import { Pinecone } from '@pinecone-database/pinecone'
+import { PageDimensions } from '@/types/file'
 
 const validateUser = async () => {
   const { userId } = await auth()
@@ -24,7 +25,8 @@ export const uploadFile = async (
   url: string,
   title: string,
   description: string,
-  namespace: string
+  namespace: string,
+  pageDimensions: PageDimensions
 ) => {
   const { data, error } = await tryCatch(
     db
@@ -35,6 +37,7 @@ export const uploadFile = async (
         title,
         description,
         fileUrl: url,
+        pageDimensions,
       })
       .returning()
   )

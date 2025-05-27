@@ -168,7 +168,9 @@ const Toolbar = () => {
               disabled={isGenerating}
               className={isGenerating ? 'animate-pulse' : ''}
             >
-              <IndentIncrease className={isGenerating ? 'animate-spin' : ''} />
+              <IndentIncrease
+                className={`${isGenerating ? 'color-[var(--custom)] animate-pulse' : ''}`}
+              />
             </Button>
           </TooltipWrapper>
 

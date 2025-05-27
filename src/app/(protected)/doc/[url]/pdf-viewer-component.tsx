@@ -3,20 +3,24 @@
 import BoundingBox from '@/components/chat/bounding-box'
 import { useSelectedTextStore } from '@/stores/selected-text-store'
 import { useCitationStore } from '@/stores/citation-store'
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/TextLayer.css'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 import { Chunk } from '@/types/chunk'
+import { usePDFViewer } from '@/hooks/use-pdf-viewer'
+import { PageDimensions } from '@/types/file'
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
 
 export default function PDFViewerComponent({
   url,
   chunks,
+  pageDimensions,
 }: {
   url: string
   chunks: Chunk[]
+  pageDimensions: PageDimensions
 }) {
   const [numPages, setNumPages] = useState<number | null>(null)
   const [pageWidth, setPageWidth] = useState<number>(0)
@@ -25,36 +29,14 @@ export default function PDFViewerComponent({
   const containerRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const pageRefs = useRef<Record<number, HTMLDivElement | null>>({})
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const setSelectedText = useSelectedTextStore((state) => state.setSelectedText)
   const hoveredChunkPage = useCitationStore((state) => state.hoveredChunkPage)
-
-  const scrollToPage = useCallback((pageNumber: number) => {
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current)
-    }
-
-    scrollTimeoutRef.current = setTimeout(() => {
-      if (scrollContainerRef.current && pageRefs.current[pageNumber]) {
-        const pageElement = pageRefs.current[pageNumber]
-        if (pageElement) {
-          const container = scrollContainerRef.current
-          const containerRect = container.getBoundingClientRect()
-          const pageRect = pageElement.getBoundingClientRect()
-
-          if (
-            pageRect.top < containerRect.top ||
-            pageRect.bottom > containerRect.bottom
-          ) {
-            pageElement.scrollIntoView({
-              behavior: 'smooth',
-              block: 'start',
-            })
-          }
-        }
-      }
-    }, 300)
-  }, [])
+  const { scrollToPage, calculateScale, scrollTimeoutRef } = usePDFViewer({
+    pageDimensions,
+    scrollContainerRef,
+    pageRefs,
+    setPageWidth,
+  })
 
   useEffect(() => {
     if (hoveredChunkPage) {
@@ -63,26 +45,26 @@ export default function PDFViewerComponent({
   }, [hoveredChunkPage, scrollToPage])
 
   useEffect(() => {
+    const timeoutRef = scrollTimeoutRef.current
     return () => {
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current)
+      if (timeoutRef) {
+        clearTimeout(timeoutRef)
       }
     }
-  }, [])
+  }, [scrollTimeoutRef])
 
   useEffect(() => {
     const updatePageDimensions = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.clientWidth
-        const newWidth = containerWidth * 0.95
-        setPageWidth(newWidth)
-        setScale(newWidth / 612)
+        const newScale = calculateScale(containerWidth)
+        setScale(newScale)
       }
     }
     updatePageDimensions()
     window.addEventListener('resize', updatePageDimensions)
     return () => window.removeEventListener('resize', updatePageDimensions)
-  }, [])
+  }, [calculateScale])
 
   useEffect(() => {
     const handleTextSelection = () => {

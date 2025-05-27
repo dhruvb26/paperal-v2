@@ -26,24 +26,26 @@ export function calculateChunkBBox(chunk: LocalChunk): BBox {
   }
 
   const firstBBox = chunk.segments[0].bbox
-  let minLeft = firstBBox.left
-  let minTop = firstBBox.top
-  let maxRight = firstBBox.left + firstBBox.width
-  let maxBottom = firstBBox.top + firstBBox.height
+  const anchorLeft = firstBBox.left
+  const anchorTop = firstBBox.top
+
+  let maxWidth = firstBBox.width
+  let maxHeight = firstBBox.height
 
   for (let i = 1; i < chunk.segments.length; i++) {
     const bbox = chunk.segments[i].bbox
-    minLeft = Math.min(minLeft, bbox.left)
-    minTop = Math.min(minTop, bbox.top)
-    maxRight = Math.max(maxRight, bbox.left + bbox.width)
-    maxBottom = Math.max(maxBottom, bbox.top + bbox.height)
+    const relativeRight = bbox.left + bbox.width - anchorLeft
+    const relativeBottom = bbox.top + bbox.height - anchorTop
+
+    maxWidth = Math.max(maxWidth, relativeRight)
+    maxHeight = Math.max(maxHeight, relativeBottom)
   }
 
   return {
-    left: minLeft,
-    top: minTop,
-    width: maxRight - minLeft,
-    height: maxBottom - minTop,
+    left: anchorLeft,
+    top: anchorTop,
+    width: maxWidth,
+    height: maxHeight,
   }
 }
 

@@ -85,7 +85,7 @@ export const processUrlTask = task({
 
       const processed = await processChunks(outputChunks)
 
-      const { title, info, chunks } = processed
+      const { title, info, chunks, pageDimensions } = processed
 
       const geminiPayload = {
         contents: [
@@ -191,7 +191,14 @@ export const processUrlTask = task({
       await Promise.all([
         Promise.all(pineconeUpserts),
         createChunks(chunksWithBBox),
-        uploadFile(payload.userId, payload.url, title, info, namespace),
+        uploadFile(
+          payload.userId,
+          payload.url,
+          title,
+          info,
+          namespace,
+          pageDimensions
+        ),
         addToLibrary(title, info, metadata, payload.userId),
       ])
 

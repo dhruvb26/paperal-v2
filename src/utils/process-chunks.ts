@@ -1,3 +1,5 @@
+import { PageDimensions } from '@/types/file'
+
 function hasDateInContent(content: string): boolean {
   const datePattern =
     /(?:\d{4}|(?:\d{1,2}\s)?(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s?\d{4})/i
@@ -43,6 +45,25 @@ export async function processChunks(chunks: any) {
     }
   }
 
+  const allPageDimensions: PageDimensions = {}
+
+  for (const chunk of chunks) {
+    for (const segment of chunk.segments) {
+      const pageNumber = segment.page_number
+
+      if (
+        !allPageDimensions[pageNumber] &&
+        segment.page_width &&
+        segment.page_height
+      ) {
+        allPageDimensions[pageNumber] = {
+          page_width: segment.page_width,
+          page_height: segment.page_height,
+        }
+      }
+    }
+  }
+
   const finalChunks = chunks.map((chunk: any) => {
     return {
       _id: chunk.chunk_id,
@@ -55,5 +76,6 @@ export async function processChunks(chunks: any) {
     title,
     info,
     chunks: finalChunks,
+    pageDimensions: allPageDimensions,
   }
 }

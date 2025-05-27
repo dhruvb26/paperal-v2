@@ -35,19 +35,22 @@ export default function HomePage() {
           <div className="h-[1px] w-36 bg-muted" />
         </div>
         <div className="flex flex-row items-center justify-center gap-2">
-          {uploading && runId && fileUrl && (
+          {uploading && runId && fileUrl ? (
             <TaskProgress
               runId={runId}
               fileUrl={fileUrl}
               onComplete={resetTask}
             />
+          ) : (
+            <>
+              <span className="text-muted-foreground">Upload a PDF</span>
+              <UploadPdfButton
+                setUploading={setUploading}
+                setRunId={setRunId}
+                setFileUrl={setFileUrl}
+              />
+            </>
           )}
-          <span className="text-muted-foreground">Upload a PDF</span>
-          <UploadPdfButton
-            setUploading={setUploading}
-            setRunId={setRunId}
-            setFileUrl={setFileUrl}
-          />
         </div>
       </div>
     </div>

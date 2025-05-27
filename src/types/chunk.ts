@@ -11,7 +11,3 @@ export type Chunk = {
   page?: number
   createdAt: Date
 }
-
-export type ExtendedChunk = Chunk & {
-  page: number
-}
