@@ -189,10 +189,12 @@
   transition: all 0.3s ease-in-out;
   max-height: 0;
   opacity: 0;
-  overflow: scroll;
+  overflow: hidden;
 }
 
 .expand-content.expanded {
   max-height: fit-content;
   opacity: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
