@@ -7,6 +7,20 @@ import { getGraph } from '@/backend/actions/graph'
 import Loader from '@/components/global/loader'
 import dynamic from 'next/dynamic'
 import FlowComponent from '@/components/graph/flow-component'
+import { 
+  Select, 
+  SelectContent, 
+  SelectGroup,
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue,
+  SelectLabel
+} from '@/components/ui/select'
+import { Check, X } from "lucide-react"
+import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+
 const NodeComponent = dynamic(
   () => import('@/components/graph/node-component'),
   {
@@ -17,6 +31,7 @@ const NodeComponent = dynamic(
 export default function GraphPage() {
   const [graphData, setGraphData] = useState<GraphData<Node, Link> | null>(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+  const [selectedChunkIds, setSelectedChunkIds] = useState<string[]>([])
 
   useEffect(() => {
     setDimensions({
@@ -94,29 +109,130 @@ export default function GraphPage() {
   }
 
   const originNodes = nodes.filter(
-    (n) => n.data.chunk_id === '5a0e7213-522d-468a-b771-8f9793d6d9c3'
+    (n) => selectedChunkIds.includes(n.data.chunk_id)
   )
 
-  const outgoingEdges = edges.filter((e) => e.source === originNodes[0]?.id)
-
-  const targetIds = outgoingEdges.map((e) => e.target)
-
-  const targetNodes = nodes.filter((n) => targetIds.includes(n.id))
-
+  const allOriginNodes = nodes.filter((n) => n.data.labels[0] === 'Origin')
   const taskNode = nodes.find((n) => n.data.labels[0] === 'Task')
 
-  const taskEdge = edges.find(
-    (e) => e.source === taskNode?.id && e.target === originNodes[0]?.id
-  )
+  // Only compute the graph elements if nodes are selected
+  let finalNodes: typeof nodes = []
+  let finalEdges: typeof edges = []
 
-  const finalEdges = [...outgoingEdges, taskEdge]
+  if (selectedChunkIds.length > 0 && originNodes.length > 0) {
+    // Track all target nodes and edges to avoid duplicates
+    const targetNodesMap = new Map()
+    const edgesMap = new Map()
+    
+    // For each selected origin node
+    for (const originNode of originNodes) {
+      // Get all edges where this origin node is the source
+      const outgoingEdges = edges.filter((e) => e.source === originNode.id)
+      
+      // Get target nodes of those edges
+      const targetIds = outgoingEdges.map((e) => e.target)
+      const targetNodes = nodes.filter((n) => targetIds.includes(n.id))
+      
+      // Add target nodes to map to avoid duplicates
+      targetNodes.forEach(node => targetNodesMap.set(node.id, node))
+      
+      // Get the edge from task to this origin node
+      if (taskNode) {
+        const taskEdge = edges.find(
+          (e) => e.source === taskNode.id && e.target === originNode.id
+        )
+        if (taskEdge) {
+          edgesMap.set(taskEdge.id, taskEdge)
+        }
+      }
+      
+      // Add outgoing edges to map
+      outgoingEdges.forEach(edge => edgesMap.set(edge.id, edge))
+    }
+    
+    // Combine all unique nodes and edges
+    finalNodes = [...originNodes, ...Array.from(targetNodesMap.values())]
+    if (taskNode) finalNodes.push(taskNode)
+    
+    finalEdges = Array.from(edgesMap.values())
+  }
 
-  const finalNodes = [...originNodes, ...targetNodes, taskNode]
+  const toggleChunkId = (chunkId: string) => {
+    setSelectedChunkIds(prev => 
+      prev.includes(chunkId)
+        ? prev.filter(id => id !== chunkId)
+        : [...prev, chunkId]
+    )
+  }
+
+  const removeChunkId = (chunkId: string) => {
+    setSelectedChunkIds(prev => prev.filter(id => id !== chunkId))
+  }
 
   return (
     <>
       {/* <NodeComponent graphData={graphData} /> */}
-      <FlowComponent nodes={finalNodes} edges={finalEdges} />
+      <div className="absolute top-4 left-4 z-10 bg-white rounded-md shadow-md p-4 max-w-[500px]">
+        <div className="flex flex-col gap-2">
+          <Select 
+            onValueChange={(value) => toggleChunkId(value)}
+          >
+            <SelectTrigger className="w-[300px]">
+              <SelectValue placeholder="Select origin nodes" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Origin Nodes</SelectLabel>
+                {allOriginNodes.map((node) => (
+                  <SelectItem 
+                    key={node.data.chunk_id} 
+                    value={node.data.chunk_id}
+                    className="flex items-center justify-between pr-2"
+                  >
+                    <div className="flex items-center">
+                      <span className={cn(
+                        "mr-2 h-4 w-4 flex items-center justify-center",
+                        selectedChunkIds.includes(node.data.chunk_id) ? "text-primary" : "opacity-0"
+                      )}>
+                        {selectedChunkIds.includes(node.data.chunk_id) && <Check className="h-3 w-3" />}
+                      </span>
+                      {node.data.content.substring(0, 50)}...
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          
+          {selectedChunkIds.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {selectedChunkIds.map(chunkId => {
+                const node = allOriginNodes.find(n => n.data.chunk_id === chunkId)
+                return (
+                  <Badge key={chunkId} variant="secondary" className="flex items-center gap-1">
+                    {node?.data.content.substring(0, 20)}...
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-4 w-4 p-0" 
+                      onClick={() => removeChunkId(chunkId)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </Badge>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+      {selectedChunkIds.length > 0 ? (
+        <FlowComponent nodes={finalNodes.filter(Boolean)} edges={finalEdges.filter(Boolean)} />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center">
+          <p className="text-lg text-gray-500">Select one or more nodes to view the graph</p>
+        </div>
+      )}
     </>
   )
 }
