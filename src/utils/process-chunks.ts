@@ -65,13 +65,15 @@ export async function processChunks(chunks: ChunkrAPIChunk[]) {
     }
   }
 
-  const finalChunks = chunks.map((chunk: ChunkrAPIChunk) => {
-    return {
-      _id: chunk.chunk_id,
-      text: chunk.embed,
-      page: getMostFrequentPageNumber(chunk.segments),
-    }
-  })
+  const finalChunks = chunks
+    .map((chunk: ChunkrAPIChunk) => {
+      return {
+        _id: chunk.chunk_id,
+        text: chunk.embed,
+        page: getMostFrequentPageNumber(chunk.segments),
+      }
+    })
+    .filter((chunk) => chunk.text.length > 0)
 
   return {
     title,

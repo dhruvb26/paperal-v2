@@ -19,13 +19,14 @@ const validateUser = async () => {
 }
 
 // auth is done in the uploadThing middleware
-export const uploadFile = async (
+export const addFileToDb = async (
   userId: string,
   url: string,
   title: string,
   description: string,
   namespace: string,
-  pageDimensions: PageDimensions
+  pageDimensions: PageDimensions,
+  taskId: string
 ) => {
   const { data, error } = await tryCatch(
     db
@@ -37,6 +38,7 @@ export const uploadFile = async (
         description,
         fileUrl: url,
         pageDimensions,
+        taskId,
       })
       .returning()
   )

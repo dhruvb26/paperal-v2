@@ -1,6 +1,6 @@
 import { processChunks } from '@/utils/process-chunks'
 import { Pinecone } from '@pinecone-database/pinecone'
-import { uploadFile } from '@/backend/actions/file'
+import { addFileToDb } from '@/backend/actions/file'
 import { logger, task, wait } from '@trigger.dev/sdk/v3'
 import { nanoid } from 'nanoid'
 import { processChunksWithBBox } from '@/utils/bbox-utils'
@@ -180,6 +180,7 @@ export const processUrlTask = task({
       }
 
       const namespace = `${processed.title
+        .replace(/[^\x00-\x7F]+/g, '')
         .replace(/\s+/g, '-')
         .toLowerCase()}-${nanoid(10)}`
 
@@ -198,13 +199,14 @@ export const processUrlTask = task({
       await Promise.all([
         Promise.all(pineconeUpserts),
         createChunks(chunksWithBBox),
-        uploadFile(
+        addFileToDb(
           payload.userId,
           payload.url,
           title,
           info,
           namespace,
-          pageDimensions
+          pageDimensions,
+          taskId
         ),
         addToLibrary(title, info, metadata, payload.userId),
       ])

@@ -28,6 +28,7 @@ export const filesTable = pgTable('files', {
   title: text().notNull(),
   description: text().notNull(),
   pageDimensions: jsonb('page_dimensions'),
+  taskId: varchar('task_id'),
   fileUrl: varchar('file_url').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })

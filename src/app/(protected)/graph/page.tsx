@@ -52,6 +52,7 @@ export default function GraphPage() {
 
   useEffect(() => {
     const makeReq = async () => {
+      // TODO: get the graph id from the url
       const data = await getGraph('01d88d85-9dd6-407d-b9f2-9dcb17b8aabc')
       setGraphData(data)
     }
