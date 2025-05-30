@@ -14,6 +14,9 @@ importers:
       '@clerk/nextjs':
         specifier: ^6.19.5
         version: 6.19.5(next@15.3.2(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@mistralai/mistralai':
+        specifier: ^1.7.1
+        version: 1.7.1(zod@3.23.8)
       '@neo4j-nvl/react':
         specifier: ^0.3.8
         version: 0.3.8(neo4j-driver@5.28.1)
@@ -920,6 +923,11 @@ packages:
   '@lukeed/uuid@2.0.1':
     resolution: {integrity: sha512-qC72D4+CDdjGqJvkFMMEAtancHUQ7/d/tAiHf64z8MopFDmcrtbcJuerDtFceuAfQJ2pDSfCKCtbqoGBNnwg0w==}
     engines: {node: '>=8'}
+
+  '@mistralai/mistralai@1.7.1':
+    resolution: {integrity: sha512-/kkTLOSty2zkHlwzyfnnIE4XDVVZw/w3O9zO7XuyuvMi7h5H12W7ikFNSskIOcBQuIm8vUx3GLMzjhfduECVHg==}
+    peerDependencies:
+      zod: '>= 3'
 
   '@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.3':
     resolution: {integrity: sha512-QZHtlVgbAdy2zAqNA9Gu1UpIuI8Xvsd1v8ic6B2pZmeFnFcMWiPLfWXh7TVw4eGEZ/C9TH281KwhVoeQUKbyjw==}
@@ -5223,6 +5231,11 @@ packages:
   zod-error@1.5.0:
     resolution: {integrity: sha512-zzopKZ/skI9iXpqCEPj+iLCKl9b88E43ehcU+sbRoHuwGd9F1IDVGQ70TyO6kmfiRL1g4IXkjsXK+g1gLYl4WQ==}
 
+  zod-to-json-schema@3.24.5:
+    resolution: {integrity: sha512-/AuWwMP+YqiPbsJx5D6TfgRTc4kTLjsh5SOcd4bLsfUg2RcEXrFMJl1DGgdHy2aCfsIA/cr/1JM0xcB2GZji8g==}
+    peerDependencies:
+      zod: ^3.24.1
+
   zod-validation-error@1.5.0:
     resolution: {integrity: sha512-/7eFkAI4qV0tcxMBB/3+d2c1P6jzzZYdYSlBuAklzMuCrJu5bzJfHS0yVAS87dRHVlhftd6RFJDIvv03JgkSbw==}
     engines: {node: '>=16.0.0'}
@@ -5732,6 +5745,11 @@ snapshots:
   '@lukeed/uuid@2.0.1':
     dependencies:
       '@lukeed/csprng': 1.1.0
+
+  '@mistralai/mistralai@1.7.1(zod@3.23.8)':
+    dependencies:
+      zod: 3.23.8
+      zod-to-json-schema: 3.24.5(zod@3.23.8)
 
   '@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.3':
     optional: true
@@ -10667,6 +10685,10 @@ snapshots:
   yocto-queue@0.1.0: {}
 
   zod-error@1.5.0:
+    dependencies:
+      zod: 3.23.8
+
+  zod-to-json-schema@3.24.5(zod@3.23.8):
     dependencies:
       zod: 3.23.8
 

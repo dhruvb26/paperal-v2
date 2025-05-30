@@ -16,6 +16,7 @@
   "dependencies": {
     "@clerk/elements": "^0.23.28",
     "@clerk/nextjs": "^6.19.5",
+    "@mistralai/mistralai": "^1.7.1",
     "@neo4j-nvl/react": "^0.3.8",
     "@phosphor-icons/react": "^2.1.8",
     "@pinecone-database/pinecone": "^6.0.1",
