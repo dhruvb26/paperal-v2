@@ -7,6 +7,7 @@ import { processChunksWithBBox } from '@/utils/bbox-utils'
 import { createChunks } from '@/backend/actions/chunk'
 import { getMeConfig } from '@/utils/chunking-config'
 import { addToLibrary } from '@/backend/actions/library'
+// import { processCitationsAndChunks } from '@/backend/actions/graph'
 
 interface ProcessUrlPayload {
   url: string
@@ -200,6 +201,8 @@ export const processUrlTask = task({
           pageDimensions
         ),
         addToLibrary(title, info, metadata, payload.userId),
+        // TODO: Uncomment this when the citations are available
+        // processCitationsAndChunks(metadata.citations, outputChunks, taskId),
       ])
 
       return {

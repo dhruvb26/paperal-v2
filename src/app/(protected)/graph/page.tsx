@@ -5,8 +5,15 @@ import { GraphData } from 'react-force-graph-2d'
 import { Link, Node } from '@/types/graph'
 import { getGraph } from '@/backend/actions/graph'
 import Loader from '@/components/global/loader'
-import dynamic from 'next/dynamic'
 import FlowComponent from '@/components/graph/flow-component'
+import dynamic from 'next/dynamic'
+
+const NodeComponent = dynamic(
+  () => import('@/components/graph/node-component'),
+  {
+    ssr: false,
+  }
+)
 import {
   Select,
   SelectContent,
@@ -45,7 +52,7 @@ export default function GraphPage() {
 
   useEffect(() => {
     const makeReq = async () => {
-      const data = await getGraph()
+      const data = await getGraph('01d88d85-9dd6-407d-b9f2-9dcb17b8aabc')
       setGraphData(data)
     }
     makeReq()
@@ -164,7 +171,7 @@ export default function GraphPage() {
 
   return (
     <>
-      <div className="flex flex-col gap-2 top-4 left-4 z-10 absolute p-4 max-w-xl">
+      {/* <div className="flex flex-col gap-2 top-4 left-4 z-10 absolute p-4 max-w-xl">
         <Select onValueChange={(value) => toggleChunkId(value)}>
           <SelectTrigger className="w-[300px] bg-background">
             <SelectValue placeholder="Select origin nodes" />
@@ -237,7 +244,8 @@ export default function GraphPage() {
             Select one or more nodes to view the graph.
           </p>
         </div>
-      )}
+      )} */}
+      <NodeComponent graphData={graphData} />
     </>
   )
 }
