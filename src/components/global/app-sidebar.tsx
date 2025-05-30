@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import { Home } from 'lucide-react'
+import { ChartNetwork, Home } from 'lucide-react'
 import CreateDocButton from '@/components/user/create-doc-button'
 import UserDocList from '@/components/global/user-doc-list'
 // import UploadPdfButton from '@/components/user/upload-pdf-button'
@@ -21,6 +21,11 @@ const items = [
     title: 'Home',
     url: '/home',
     icon: Home,
+  },
+  {
+    title: 'Graph',
+    url: '/graph',
+    icon: ChartNetwork,
   },
 ]
 

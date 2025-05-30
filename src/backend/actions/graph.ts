@@ -91,9 +91,6 @@ export async function getGraph(taskId: string) {
       links,
     }
 
-    console.log(links.length)
-    console.log(nodes.length)
-
     return graphData
   } catch (error) {
     console.error('Error connecting to Neo4j:', error)
