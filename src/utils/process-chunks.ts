@@ -1,4 +1,5 @@
 import { PageDimensions } from '@/types/file'
+import { ChunkrAPIChunk, ChunkrAPISegment } from '@/types/chunk'
 
 function hasDateInContent(content: string): boolean {
   const datePattern =
@@ -6,7 +7,7 @@ function hasDateInContent(content: string): boolean {
   return datePattern.test(content)
 }
 
-function getMostFrequentPageNumber(segments: any[]): number {
+function getMostFrequentPageNumber(segments: ChunkrAPISegment[]): number {
   const pageCount: { [key: number]: number } = {}
   let maxCount = 0
   let mostFrequentPage = 1 // default to 1 if no page numbers found
@@ -26,7 +27,7 @@ function getMostFrequentPageNumber(segments: any[]): number {
   return mostFrequentPage
 }
 
-export async function processChunks(chunks: any) {
+export async function processChunks(chunks: ChunkrAPIChunk[]) {
   let title = ''
   let info = ''
 
@@ -64,7 +65,7 @@ export async function processChunks(chunks: any) {
     }
   }
 
-  const finalChunks = chunks.map((chunk: any) => {
+  const finalChunks = chunks.map((chunk: ChunkrAPIChunk) => {
     return {
       _id: chunk.chunk_id,
       text: chunk.embed,

@@ -3,11 +3,10 @@
 import { tryCatch } from '@/utils/try-catch'
 import { chunksTable, filesTable } from '@/db/schema'
 import { db } from '@/db'
-import { File } from '@/types/file'
+import { File, PageDimensions } from '@/types/file'
 import { auth } from '@clerk/nextjs/server'
 import { and, eq } from 'drizzle-orm'
 import { Pinecone } from '@pinecone-database/pinecone'
-import { PageDimensions } from '@/types/file'
 
 const validateUser = async () => {
   const { userId } = await auth()

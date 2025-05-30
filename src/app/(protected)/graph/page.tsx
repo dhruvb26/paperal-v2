@@ -171,7 +171,7 @@ export default function GraphPage() {
 
   return (
     <>
-      {/* <div className="flex flex-col gap-2 top-4 left-4 z-10 absolute p-4 max-w-xl">
+      <div className="flex flex-col gap-2 top-4 left-4 z-10 absolute p-4 max-w-xl">
         <Select onValueChange={(value) => toggleChunkId(value)}>
           <SelectTrigger className="w-[300px] bg-background">
             <SelectValue placeholder="Select origin nodes" />
@@ -244,8 +244,8 @@ export default function GraphPage() {
             Select one or more nodes to view the graph.
           </p>
         </div>
-      )} */}
-      <NodeComponent graphData={graphData} />
+      )}
+      {/* <NodeComponent graphData={graphData} /> */}
     </>
   )
 }

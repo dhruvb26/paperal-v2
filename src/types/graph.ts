@@ -31,3 +31,11 @@ export interface Link {
   target: string
   type: string
 }
+
+export interface Reference {
+  title: string
+  authors: string[]
+  year: string
+  order?: number
+  url: string
+}

@@ -7,7 +7,7 @@ import { processChunksWithBBox } from '@/utils/bbox-utils'
 import { createChunks } from '@/backend/actions/chunk'
 import { getMeConfig } from '@/utils/chunking-config'
 import { addToLibrary } from '@/backend/actions/library'
-// import { processCitationsAndChunks } from '@/backend/actions/graph'
+import { populateNeo4jTask } from '@/trigger/populate-neo4j'
 
 interface ProcessUrlPayload {
   url: string
@@ -83,6 +83,12 @@ export const processUrlTask = task({
       if (outputChunks.length === 0) {
         throw new Error('Failed to get chunks after maximum retries')
       }
+
+      // Trigger the populateNeo4jTask to populate the Neo4j database
+      await populateNeo4jTask.trigger({
+        taskId,
+        chunks: outputChunks,
+      })
 
       const processed = await processChunks(outputChunks)
 
@@ -201,8 +207,6 @@ export const processUrlTask = task({
           pageDimensions
         ),
         addToLibrary(title, info, metadata, payload.userId),
-        // TODO: Uncomment this when the citations are available
-        // processCitationsAndChunks(metadata.citations, outputChunks, taskId),
       ])
 
       return {

@@ -1,29 +1,14 @@
 'use server'
 
 import neo4j from 'neo4j-driver'
+import { Reference } from '@/types/graph'
+import { ChunkrAPIChunk } from '@/types/chunk'
 
 const NODE_COLORS = {
   Task: '#daed97',
   Origin: '#c0ddbf',
   Cited: '#ff9fd0   ',
   default: '#f5f5f5',
-}
-
-interface Citation {
-  authors: string[]
-  title: string
-  year: number
-  order: number
-}
-
-interface Segment {
-  content: string
-  llm?: string
-}
-
-interface Chunk {
-  chunk_id: string
-  segments: Segment[]
 }
 
 interface ChunkData {
@@ -132,21 +117,21 @@ function serializeRelationship(
 ) {
   if (!relationship) return null
 
-  const properties = relationship.properties
-    ? Object.fromEntries(
-        Object.entries(relationship.properties).map(([key, value]) => {
-          if (
-            value &&
-            typeof value === 'object' &&
-            'low' in value &&
-            'high' in value
-          ) {
-            return [key, value.low]
-          }
-          return [key, value]
-        })
-      )
-    : {}
+  // const properties = relationship.properties
+  //   ? Object.fromEntries(
+  //       Object.entries(relationship.properties).map(([key, value]) => {
+  //         if (
+  //           value &&
+  //           typeof value === 'object' &&
+  //           'low' in value &&
+  //           'high' in value
+  //         ) {
+  //           return [key, value.low]
+  //         }
+  //         return [key, value]
+  //       })
+  //     )
+  //   : {}
 
   return {
     id: relationship.elementId,
@@ -156,7 +141,7 @@ function serializeRelationship(
   }
 }
 
-export async function addCitedNodes(citedNodes: Citation[]) {
+export async function addCitedNodes(citedNodes: Reference[]) {
   try {
     const URI = process.env.NEO4J_URI!
     const USER = 'neo4j'
@@ -244,8 +229,8 @@ export async function addOriginNodes(
 }
 
 export async function processCitationsAndChunks(
-  citationsData: Omit<Citation, 'order'>[],
-  totalChunks: Chunk[],
+  citationsData: Omit<Reference, 'order'>[],
+  totalChunks: ChunkrAPIChunk[],
   taskId: string
 ) {
   try {

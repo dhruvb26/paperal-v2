@@ -1,7 +1,6 @@
 'use client'
 import { CitedNode } from '@/types/graph'
-import { Position } from '@xyflow/react'
-import { Handle } from '@xyflow/react'
+import { Handle, Position } from '@xyflow/react'
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react'

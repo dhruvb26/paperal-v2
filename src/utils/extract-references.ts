@@ -1,4 +1,6 @@
-export async function extractCitations(chunks: any[]) {
+import { ChunkrAPIChunk } from '@/types/chunk'
+
+export async function extractReferences(chunks: ChunkrAPIChunk[]) {
   try {
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY
 

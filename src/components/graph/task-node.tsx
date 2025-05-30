@@ -1,7 +1,6 @@
 'use client'
 import { TaskNode } from '@/types/graph'
-import { Position } from '@xyflow/react'
-import { Handle } from '@xyflow/react'
+import { Handle, Position } from '@xyflow/react'
 import React from 'react'
 
 function TaskNodeComponent({ data }: { data: TaskNode }) {

@@ -1,7 +1,6 @@
 'use client'
 import { OriginNode } from '@/types/graph'
-import { Handle } from '@xyflow/react'
-import { Position } from '@xyflow/react'
+import { Handle, Position } from '@xyflow/react'
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
