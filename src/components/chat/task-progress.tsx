@@ -6,8 +6,8 @@ import { Progress } from '@/components/ui/progress'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import Loader from '@/components/global/loader'
+import { useFileStore } from '@/stores/files-store'
 
-const POLL_INTERVAL = 1500
 const STATUS_MAPPING: Record<string, number> = {
   CREATED: 10,
   QUEUED: 20,
@@ -22,87 +22,113 @@ const STATUS_MAPPING: Record<string, number> = {
 export default function TaskProgress({
   runId,
   fileUrl,
+  initialStatus,
   onComplete,
 }: {
   runId: string
   fileUrl: string
+  initialStatus?: string | null
   onComplete?: () => void
 }) {
-  const [status, setStatus] = useState<string>('CREATED')
-  const [progress, setProgress] = useState<number>(10)
+  const [status, setStatus] = useState<string>(initialStatus || 'CREATED')
+  const [progress, setProgress] = useState<number>(STATUS_MAPPING[initialStatus || 'CREATED'] || 10)
   const [isComplete, setIsComplete] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
-  const [executingCounter, setExecutingCounter] = useState<number>(0)
   const completionHandled = useRef<boolean>(false)
   const router = useRouter()
+  const subscriptionRef = useRef<any>(null)
+  const { triggerRefresh } = useFileStore()
 
   configure({
     secretKey: process.env['NEXT_PUBLIC_TRIGGER_SECRET_KEY'] || '',
   })
 
   useEffect(() => {
-    let mounted = true
+    let mounted = true;
+    completionHandled.current = false;
 
-    const pollTaskStatus = async () => {
+    const setupSubscription = async () => {
       try {
-        const run = await runs.retrieve(runId)
-
-        if (!mounted) return
-
-        setStatus(run.status)
-
-        if (run.status === 'EXECUTING') {
-          setExecutingCounter((prev) => prev + 1)
-          const incrementalProgress = Math.min(95, 60 + executingCounter * 2)
-          setProgress(incrementalProgress)
-        } else {
-          setProgress(STATUS_MAPPING[run.status] || progress)
+        // Get initial state
+        const initialRun = await runs.retrieve(runId);
+        
+        if (!mounted) return;
+        
+        if (['COMPLETED', 'FAILED', 'CANCELED', 'TIMED_OUT'].includes(initialRun.status)) {
+          // Already completed
+          handleCompletedRun(initialRun);
+          return;
         }
-
-        if (
-          ['COMPLETED', 'FAILED', 'CANCELED', 'TIMED_OUT'].includes(
-            run.status
-          ) &&
-          !completionHandled.current
-        ) {
-          clearInterval(intervalId)
-          setIsComplete(true)
-          completionHandled.current = true
-
-          if (run.status === 'COMPLETED') {
-            toast.success('File processed successfully', {
-              action: {
-                label: 'View file',
-                onClick: () =>
-                  router.push(`/doc/${encodeURIComponent(fileUrl)}`),
-              },
-            })
-            if (onComplete) {
-              setTimeout(onComplete, 2000)
-            }
-          } else {
-            setError(`Processing failed with status: ${run.status}`)
-            toast.error(`Processing failed: ${run.status}`)
-            if (onComplete) {
-              setTimeout(onComplete, 3000)
-            }
+        
+        // Set up subscription
+        const subscription = runs.subscribeToRun(runId);
+        subscriptionRef.current = subscription;
+        
+        // Listen for updates
+        for await (const run of subscription) {
+          if (!mounted) break;
+          
+          console.log('Run update received:', run.status);
+          setStatus(run.status);
+          setProgress(STATUS_MAPPING[run.status] || progress);
+          
+          if (['COMPLETED', 'FAILED', 'CANCELED', 'TIMED_OUT'].includes(run.status)) {
+            handleCompletedRun(run);
+            break;
           }
         }
       } catch (err) {
-        console.error('Error polling task status:', err)
-        if (!mounted) return
-        setError('Error retrieving task status')
+        console.error('Error in subscription:', err);
+        if (mounted) {
+          setError('Error tracking processing status');
+        }
       }
-    }
-
-    const intervalId = setInterval(pollTaskStatus, POLL_INTERVAL)
-    pollTaskStatus() // Initial call
-
+    };
+    
+    const handleCompletedRun = (run: any) => {
+      if (completionHandled.current) return;
+      
+      setStatus(run.status);
+      setProgress(STATUS_MAPPING[run.status] || 100);
+      setIsComplete(true);
+      completionHandled.current = true;
+      
+      if (run.status === 'COMPLETED') {
+        // Trigger refresh to update the file list
+        triggerRefresh();
+        
+        toast.success('File processed successfully', {
+          action: {
+            label: 'View file',
+            onClick: () => router.push(`/doc/${encodeURIComponent(fileUrl)}`),
+          },
+        });
+        if (onComplete) {
+          setTimeout(onComplete, 2000);
+        }
+      } else {
+        setError(`Processing failed with status: ${run.status}`);
+        toast.error(`Processing failed: ${run.status}`);
+        if (onComplete) {
+          setTimeout(onComplete, 3000);
+        }
+      }
+    };
+    
+    setupSubscription();
+    
     return () => {
-      mounted = false
-      clearInterval(intervalId)
-    }
-  }, [runId, fileUrl, router, executingCounter, progress, onComplete])
+      mounted = false;
+      // Clean up subscription if it exists
+      if (subscriptionRef.current) {
+        try {
+          subscriptionRef.current.unsubscribe?.();
+        } catch (e) {
+          console.error('Error unsubscribing:', e);
+        }
+      }
+    };
+  }, [runId, fileUrl, router, onComplete, progress, triggerRefresh]);
 
   return (
     <div className="flex flex-col gap-4 w-full max-w-md items-center">

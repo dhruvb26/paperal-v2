@@ -9,11 +9,13 @@ export default function HomePage() {
   const [uploading, setUploading] = useState(false)
   const [runId, setRunId] = useState<string | null>(null)
   const [fileUrl, setFileUrl] = useState<string | null>(null)
+  const [initialStatus, setInitialStatus] = useState<string | null>(null)
 
   const resetTask = () => {
     setUploading(false)
     setRunId(null)
     setFileUrl(null)
+    setInitialStatus(null)
   }
 
   return (
@@ -31,6 +33,7 @@ export default function HomePage() {
             setUploading={setUploading}
             setRunId={setRunId}
             setFileUrl={setFileUrl}
+            setInitialStatus={setInitialStatus}
           />
         </div>
         <div className="flex flex-row items-center justify-center gap-2">
@@ -38,6 +41,7 @@ export default function HomePage() {
             <TaskProgress
               runId={runId}
               fileUrl={fileUrl}
+              initialStatus={initialStatus}
               onComplete={resetTask}
             />
           )}
