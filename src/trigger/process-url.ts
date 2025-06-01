@@ -85,10 +85,10 @@ export const processUrlTask = task({
       }
 
       // Trigger the populateNeo4jTask to populate the Neo4j database
-      await populateNeo4jTask.trigger({
-        taskId,
-        chunks: outputChunks,
-      })
+      // await populateNeo4jTask.trigger({
+      //   taskId,
+      //   chunks: outputChunks,
+      // })
 
       const processed = await processChunks(outputChunks)
 

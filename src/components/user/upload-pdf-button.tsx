@@ -9,10 +9,12 @@ export default function UploadPdfButton({
   setUploading,
   setRunId,
   setFileUrl,
+  setInitialStatus
 }: {
   setUploading: (uploading: boolean) => void
   setRunId: (runId: string | null) => void
   setFileUrl: (fileUrl: string | null) => void
+  setInitialStatus?: (status: string | null) => void
 }) {
   return (
     <UploadButton
@@ -40,15 +42,20 @@ export default function UploadPdfButton({
       onClientUploadComplete={(res) => {
         toast.dismiss()
         if (res && res[0]) {
-          setRunId(res[0].serverData.runId)
           setFileUrl(res[0].ufsUrl)
+          if (setInitialStatus) {
+            setInitialStatus(res[0].serverData?.initialStatus)
+          }
+          setRunId(res[0].serverData?.runId)
         }
       }}
       onUploadError={(error: Error) => {
         toast.error(`ERROR! ${error.message}`)
         setUploading(false)
-        setRunId(null)
         setFileUrl(null)
+        if (setInitialStatus) {
+          setInitialStatus(null)
+        }
       }}
     />
   )

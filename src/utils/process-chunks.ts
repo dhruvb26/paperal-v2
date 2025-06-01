@@ -27,6 +27,25 @@ function getMostFrequentPageNumber(segments: ChunkrAPISegment[]): number {
   return mostFrequentPage
 }
 
+// Function to truncate text to safe size for Pinecone
+function truncateTextForPinecone(text: string): string {
+  // Pinecone's limit is 40960 bytes per vector
+  const MAX_METADATA_SIZE = 20000; // Leaving room for other metadata fields and encoding overhead
+  
+  // Rough estimate of text size in bytes
+  const estimatedSize = new TextEncoder().encode(text).length;
+  
+  if (estimatedSize <= MAX_METADATA_SIZE) {
+    return text;
+  }
+  
+  // Calculate a safe truncation point
+  const ratio = MAX_METADATA_SIZE / estimatedSize;
+  const safeLength = Math.floor(text.length * ratio * 0.95); // 5% safety margin
+  
+  return text.substring(0, safeLength);
+}
+
 export async function processChunks(chunks: ChunkrAPIChunk[]) {
   let title = ''
   let info = ''
@@ -67,9 +86,13 @@ export async function processChunks(chunks: ChunkrAPIChunk[]) {
 
   const finalChunks = chunks
     .map((chunk: ChunkrAPIChunk) => {
+      // use regex to remove | from the text
+      const text = chunk.embed.replace(/\|/g, '')
+      // Truncate text to safe size for Pinecone
+      const safeText = truncateTextForPinecone(text)
       return {
         _id: chunk.chunk_id,
-        text: chunk.embed,
+        text: safeText,
         page: getMostFrequentPageNumber(chunk.segments),
       }
     })
