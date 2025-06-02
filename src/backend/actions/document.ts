@@ -20,8 +20,8 @@ export async function createDocument(
 ): Promise<ServerResult<Document, SerializableError>> {
   const user = await validateUser()
 
-  const result = await user.asyncAndThen((userId: string) =>
-    ResultAsync.fromPromise(
+  const result = await user.asyncAndThen((userId: string) => {
+    return ResultAsync.fromPromise(
       fetch(`${api}/topic`, {
         method: 'POST',
         body: JSON.stringify({ query: prompt }),
@@ -36,7 +36,6 @@ export async function createDocument(
       .andThen((response) => {
         if (!response.ok) {
           const errorText = response.text().catch(() => 'Unknown error')
-
           return err({
             type: 'http',
             message: `API Error: ${response.status} - ${errorText}`,
@@ -53,15 +52,15 @@ export async function createDocument(
             message: error instanceof Error ? error.message : String(error),
             stack: error instanceof Error ? error.stack : undefined,
           })
-        ).map(() => ({ main_topic: topicData.data }))
+        ).map(() => ({ rawData: topicData.data }))
       })
-      .andThen(({ main_topic }) => {
+      .andThen(({ rawData }) => {
         return ResultAsync.fromPromise(
           db
             .insert(documentsTable)
             .values({
               userId,
-              title: main_topic,
+              title: rawData.main_topic,
               prompt,
               content: {
                 type: 'doc',
@@ -69,7 +68,7 @@ export async function createDocument(
                   {
                     type: 'heading',
                     attrs: { level: 1 },
-                    content: [{ type: 'text', text: main_topic }],
+                    content: [{ type: 'text', text: rawData.main_topic }],
                   },
                   { type: 'paragraph', content: [] },
                 ],
@@ -84,7 +83,7 @@ export async function createDocument(
           })
         )
       })
-  )
+  })
 
   return serverResult(result)
 }

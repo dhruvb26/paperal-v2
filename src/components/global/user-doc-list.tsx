@@ -123,7 +123,7 @@ export default function UserDocList() {
                   className="text-destructive focus:text-destructive focus:bg-destructive/10 hover:cursor-pointer"
                 >
                   <Trash2 size={16} />
-                  <span>Delete Document</span>
+                  <span>Delete</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -69,7 +69,7 @@ export async function processChunks(chunks: ChunkrAPIChunk[]) {
     .map((chunk: ChunkrAPIChunk) => {
       return {
         _id: chunk.chunk_id,
-        text: chunk.embed,
+        text: chunk.embed.trim(),
         page: getMostFrequentPageNumber(chunk.segments),
       }
     })
