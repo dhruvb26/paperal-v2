@@ -1,0 +1,19 @@
+[data-sonner-toast][data-styled='true'] {
+  box-shadow: none !important;
+}
+
+[data-sonner-toast]:focus-visible {
+  box-shadow: none !important;
+}
+
+[data-sonner-toast][data-styled='true'] [data-button]:focus-visible {
+  box-shadow: none !important;
+}
+
+[data-sonner-toast][data-styled='true'] [data-close-button]:focus-visible {
+  box-shadow: none !important;
+}
+
+[data-sonner-toast][data-styled='true']:hover [data-close-button]:hover {
+  box-shadow: none !important;
+}
