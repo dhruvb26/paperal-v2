@@ -12,7 +12,10 @@ export const populateNeo4jTask = task({
   id: 'populate-neo4j',
   run: async (payload: PopulateNeo4jPayload) => {
     try {
-      const references = await extractReferences(payload.chunks)
+      const referencesResponse = await extractReferences(payload.chunks)
+      
+      // Extract the references array from the response object
+      const references = referencesResponse.references || referencesResponse || []
 
       await processCitationsAndChunks(
         references,

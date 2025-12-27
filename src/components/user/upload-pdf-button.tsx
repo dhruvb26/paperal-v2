@@ -38,6 +38,7 @@ export default function UploadPdfButton({
       endpoint="pdfUploader"
       className="ut-button:bg-accent ut-button:text-muted-foreground ut-button:hover:text-foreground ut-button:hover:bg-accent ut-button:size-7 ut-button:ut-uploading:bg-accent ut-button:ut-uploading:after:bg-accent/50 ut-button:text-sm ut-button:font-normal ut-button:px-3 ut-button:py-1 ut-button:outline-none ut-button:ring-0 ut-button:focus:ring-0 ut-allowed-content:hidden ut-button:focus-visible:ring-0"
       onClientUploadComplete={(res) => {
+        console.log("Upload complete")
         toast.dismiss()
         if (res && res[0]) {
           setRunId(res[0].serverData.runId)

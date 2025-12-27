@@ -1,5 +1,5 @@
 import { task } from '@trigger.dev/sdk/v3'
-import { processUrlTask } from '@/trigger/process-url'
+import { processUrlTask } from './process-url'
 
 interface ProcessSearchedUrlsPayload {
   urls: string[]

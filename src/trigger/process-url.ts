@@ -29,14 +29,13 @@ export const processUrlTask = task({
         'https://paperal-vt9kq6y.svc.aped-4627-b74a.pinecone.io'
       const PINECONE_SPARSE_INDEX_HOST =
         'https://paperal-sparse-vt9kq6y.svc.aped-4627-b74a.pinecone.io'
-      const GEMINI_API_ENDPOINT =
-        'https://generativelanguage.googleapis.com/v1beta/models'
-      const DEFAULT_MODEL = 'gemini-2.0-flash'
-      const GEMINI_API_KEY = process.env.GEMINI_API_KEY!
+      const OPENAI_API_KEY = process.env.OPENAI_API_KEY!
 
       const pc = new Pinecone({
         apiKey: PINECONE_API_KEY,
       })
+
+      logger.log('Pinecone initialized')
 
       const MAX_RETRIES = 30
       const DELAY_MS = 2
@@ -44,8 +43,10 @@ export const processUrlTask = task({
 
       const body = getMeConfig(payload.url)
 
+      logger.log('Body: ', { body })
+
       const parseResponse = await fetch(
-        'https://api.chunkr.ai/api/v1/task/parse',
+        'https://api.chunkr.ai/tasks/parse',
         {
           method: 'POST',
           headers: {
@@ -55,7 +56,9 @@ export const processUrlTask = task({
           body: JSON.stringify(body),
         }
       )
+      logger.log('Parse response: ', { parseResponse })
       const parsedData = await parseResponse.json()
+      logger.log('Parsed data: ', { parsedData })
       const taskId = parsedData.task_id
 
       await wait.for({ seconds: 10 })
@@ -63,18 +66,44 @@ export const processUrlTask = task({
       let outputChunks = []
 
       while (retries < MAX_RETRIES) {
+        logger.log('Getting chunks...')
         const response = await fetch(
-          `https://api.chunkr.ai/api/v1/task/${taskId}`,
+          `https://api.chunkr.ai/tasks/${taskId}`,
           { method: 'GET', headers: { Authorization: CHUNKR_API_KEY } }
         )
-        const data = await response.json()
-        outputChunks = data.output.chunks
-
-        if (outputChunks && outputChunks.length > 0) {
-          break
+        const responseData = await response.json()
+        logger.log('Response data: ', { responseData })
+        
+        // Extract the actual task object from the nested response
+        const taskData = responseData.data || responseData
+        
+        logger.log('Task data: ', { 
+          completed: taskData.completed,
+          status: taskData.status,
+          hasOutput: !!taskData.output 
+        })
+        
+        // Check if task is completed
+        if (taskData.completed) {
+          logger.log('Task completed. Output structure:', { 
+            hasOutput: !!taskData.output,
+            outputKeys: taskData.output ? Object.keys(taskData.output) : null,
+            output: taskData.output 
+          })
+          
+          // Access chunks from the output
+          if (taskData.output?.chunks) {
+            outputChunks = taskData.output.chunks
+            if (outputChunks.length > 0) {
+              logger.log(`Found ${outputChunks.length} chunks`)
+              break
+            }
+          } else {
+            logger.log('Task completed but no chunks found in output')
+          }
         }
 
-        logger.log(`No chunks found on attempt ${retries + 1}.`)
+        logger.log(`Task status: ${taskData.status}, completed: ${taskData.completed}, attempt ${retries + 1}.`)
 
         await wait.for({ seconds: DELAY_MS * (1 + retries) })
         retries++
@@ -94,12 +123,12 @@ export const processUrlTask = task({
 
       const { title, info, chunks, pageDimensions } = processed
 
-      const geminiPayload = {
-        contents: [
+      const openaiPayload = {
+        model: 'gpt-4o',
+        messages: [
           {
-            parts: [
-              {
-                text: `Based on the following document excerpt, extract the title, authors, a short description, year of publication, and create an APA style in-text citation.
+            role: 'user',
+            content: `Based on the following document excerpt, extract the title, authors, a short description, year of publication, and create an APA style in-text citation.
                     Return the information in a valid JSON format with these exact keys: title, description, authors (as list), citations.in_text, year
     
                     If you cannot determine any field with high confidence, use null for that field.
@@ -117,27 +146,33 @@ export const processUrlTask = task({
                         },
                         "year": "2024"
                     }`,
-              },
-            ],
           },
         ],
       }
 
       const response = await fetch(
-        `${GEMINI_API_ENDPOINT}/${DEFAULT_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+        'https://api.openai.com/v1/chat/completions',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${OPENAI_API_KEY}`,
           },
-          body: JSON.stringify(geminiPayload),
+          body: JSON.stringify(openaiPayload),
         }
       )
 
+      if (!response.ok) {
+        throw new Error(
+          `OpenAI API call failed: ${response.status} ${response.statusText}`
+        )
+      }
+
       const data = await response.json()
+      logger.log('Data: ', { data })
 
       const dataMetadata = JSON.parse(
-        data.candidates[0].content.parts[0].text
+        data.choices[0].message.content
           .replace('```json', '')
           .replace('```', '')
           .trim()
@@ -195,6 +230,7 @@ export const processUrlTask = task({
         const batch = chunks.slice(i, i + 96)
         pineconeUpserts.push(denseIndex.upsertRecords(batch))
       }
+      logger.log('Pinecone upserts: ', { pineconeUpserts })
 
       await Promise.all([
         Promise.all(pineconeUpserts),
