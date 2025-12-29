@@ -13,12 +13,22 @@ type VectorSearchResult = {
 
 export const vectorSearchTool = tool(
   async ({ query }): Promise<VectorSearchResult> => {
-    const response = await pineconeQuery("library", query);
+    try {
+      const response = await pineconeQuery("library", query);
 
-    return {
-      query,
-      results: response,
-    };
+      // Return results even if empty - the caller will handle it
+      return {
+        query,
+        results: response || [],
+      };
+    } catch (error: any) {
+      console.error("Error in vectorSearchTool:", error.message);
+      // Return empty results on error
+      return {
+        query,
+        results: [],
+      };
+    }
   },
   {
     name: "vector_search",

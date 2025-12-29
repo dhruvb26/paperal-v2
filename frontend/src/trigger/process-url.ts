@@ -25,10 +25,6 @@ export const processUrlTask = task({
       const CHUNKR_API_KEY = process.env.CHUNKR_API_KEY!
       const PINECONE_API_KEY = process.env.PINECONE_API_KEY!
       const PINECONE_INDEX_NAME = 'paperal'
-      const PINECONE_INDEX_HOST =
-        'https://paperal-vt9kq6y.svc.aped-4627-b74a.pinecone.io'
-      const PINECONE_SPARSE_INDEX_HOST =
-        'https://paperal-sparse-vt9kq6y.svc.aped-4627-b74a.pinecone.io'
       const OPENAI_API_KEY = process.env.OPENAI_API_KEY!
 
       const pc = new Pinecone({
@@ -163,6 +159,11 @@ export const processUrlTask = task({
       )
 
       if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error')
+        logger.error(
+          `OpenAI API call failed: ${response.status} ${response.statusText}`,
+          { errorText }
+        )
         throw new Error(
           `OpenAI API call failed: ${response.status} ${response.statusText}`
         )
@@ -171,31 +172,48 @@ export const processUrlTask = task({
       const data = await response.json()
       logger.log('Data: ', { data })
 
-      const dataMetadata = JSON.parse(
-        data.choices[0].message.content
-          .replace('```json', '')
-          .replace('```', '')
-          .trim()
-      )
+      let dataMetadata
+      try {
+        dataMetadata = JSON.parse(
+          data.choices[0].message.content
+            .replace('```json', '')
+            .replace('```', '')
+            .trim()
+        )
+      } catch (error) {
+        logger.error('Failed to parse metadata from OpenAI:', { 
+          error: error instanceof Error ? error.message : String(error) 
+        })
+        dataMetadata = {
+          title: null,
+          description: null,
+          authors: [],
+          citations: { 'in_text': '' },
+          year: '',
+        }
+      }
 
       const metadata = {
-        title: dataMetadata.title,
+        title: dataMetadata.title || 'Untitled Document',
         file_url: payload.url,
-        authors: dataMetadata.authors,
-        citations: dataMetadata.citations,
-        year: dataMetadata.year,
+        authors: dataMetadata.authors || [],
+        citations: dataMetadata.citations || { 'in_text': '' },
+        year: dataMetadata.year || '',
       }
 
       if (payload.saveToLibrary) {
         try {
-          await addToLibrary(data.title, data.description, metadata)
+          const title = dataMetadata.title || 'Untitled Document'
+          const description = dataMetadata.description || 'No description available'
+          
+          await addToLibrary(title, description, metadata)
 
           const denseIndex = pc
-            .index('paperal', PINECONE_INDEX_HOST)
+            .index('paperal')
             .namespace('library')
 
           const sparseIndex = pc
-            .index('paperal-sparse', PINECONE_SPARSE_INDEX_HOST)
+            .index('paperal-sparse')
             .namespace('library')
 
           const pineconeUpserts = []
@@ -204,6 +222,9 @@ export const processUrlTask = task({
             pineconeUpserts.push(denseIndex.upsertRecords(batch))
             pineconeUpserts.push(sparseIndex.upsertRecords(batch))
           }
+
+          await Promise.all(pineconeUpserts)
+          logger.log('Successfully saved documents to Pinecone library')
 
           return {
             message: 'Processed the file successfully.',
@@ -222,7 +243,7 @@ export const processUrlTask = task({
       const chunksWithBBox = processChunksWithBBox(outputChunks, namespace)
 
       const denseIndex = pc
-        .index(PINECONE_INDEX_NAME, PINECONE_INDEX_HOST)
+        .index(PINECONE_INDEX_NAME)
         .namespace(namespace)
 
       const pineconeUpserts = []
@@ -244,7 +265,12 @@ export const processUrlTask = task({
           pageDimensions,
           taskId
         ),
-        addToLibrary(title, info, metadata, payload.userId),
+        addToLibrary(
+          title || 'Untitled Document',
+          info || 'No description available',
+          metadata,
+          payload.userId
+        ),
       ])
 
       return {

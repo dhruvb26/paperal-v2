@@ -36,7 +36,7 @@ export async function QueryVectorDB(url: string, query: string) {
   const namespace = await getNamespace(url)
 
   const dense_namespace = pc
-    .index('paperal', 'https://paperal-vt9kq6y.svc.aped-4627-b74a.pinecone.io')
+    .index('paperal')
     .namespace(namespace)
 
   const response = await dense_namespace.searchRecords({

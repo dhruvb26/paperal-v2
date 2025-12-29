@@ -12,6 +12,8 @@ import {
 } from '@/utils/server-result'
 import { validateUser } from '@/backend/actions/user'
 import type { Document } from '@/types/db'
+import { tasks } from '@trigger.dev/sdk/v3'
+import type { processSearchedUrlsTask } from '@/trigger/process-searched-urls'
 
 const api = 'http://localhost:3001'
 
@@ -193,7 +195,7 @@ export async function searchWeb(
 ): Promise<ServerResult<any, SerializableError>> {
   const user = await validateUser()
 
-  const result = await user.asyncAndThen(() =>
+  const result = await user.asyncAndThen((userId: string) =>
     ResultAsync.fromPromise(
       fetch(`${api}/search`, {
         method: 'POST',
@@ -234,20 +236,38 @@ export async function searchWeb(
             message: error instanceof Error ? error.message : String(error),
             stack: error instanceof Error ? error.stack : undefined,
           })
-        ).andThen((processResponse) => {
-          if (!processResponse.ok) {
-            const errorText = processResponse
-              .text()
-              .catch(() => 'Unknown error')
+        )
+          .andThen((processResponse) => {
+            if (!processResponse.ok) {
+              const errorText = processResponse
+                .text()
+                .catch(() => 'Unknown error')
 
-            return err({
-              type: 'http',
-              message: `API Error: ${processResponse.status} - ${errorText}`,
-              stack: new Error().stack,
-            })
-          }
-          return ResultAsync.fromSafePromise(processResponse.json())
-        })
+              return err({
+                type: 'http',
+                message: `API Error: ${processResponse.status} - ${errorText}`,
+                stack: new Error().stack,
+              })
+            }
+            return ResultAsync.fromSafePromise(processResponse.json())
+          })
+          .andThen(() => {
+            // Trigger the Trigger.dev task to process and save URLs to Pinecone
+            return ResultAsync.fromPromise(
+              tasks.trigger<typeof processSearchedUrlsTask>(
+                'process-searched-urls',
+                {
+                  urls: searchData.data.urls,
+                  userId: userId,
+                }
+              ),
+              (error): SerializableError => ({
+                type: 'trigger',
+                message: error instanceof Error ? error.message : String(error),
+                stack: error instanceof Error ? error.stack : undefined,
+              })
+            )
+          })
       })
   )
 

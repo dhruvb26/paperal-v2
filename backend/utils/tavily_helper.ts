@@ -29,7 +29,18 @@ interface TavilyResult {
       }),
     });
   
-    const data = (await response.json()) as TavilyResponse;
-  
-    return data.results.map((result) => result.url);
+    if (!response.ok) {
+      console.error(`Tavily API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text().catch(() => "Unable to read error");
+      console.error("Tavily error details:", errorText);
+      return [];
+    }
+
+    try {
+      const data = (await response.json()) as TavilyResponse;
+      return data.results?.map((result) => result.url) ?? [];
+    } catch (error) {
+      console.error("Failed to parse Tavily response as JSON:", error);
+      return [];
+    }
   }

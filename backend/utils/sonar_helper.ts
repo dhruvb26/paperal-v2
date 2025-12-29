@@ -42,10 +42,28 @@ interface SonarResponse {
       body: JSON.stringify(payload),
     });
   
-    const responseJson = (await response.json()) as SonarResponse;
-  
-    return {
-      urls: responseJson.citations ?? [],
-      related_questions: responseJson.related_questions ?? [],
-    };
+    if (!response.ok) {
+      console.error(`Sonar API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text().catch(() => "Unable to read error");
+      console.error("Sonar error details:", errorText);
+      return {
+        urls: [],
+        related_questions: [],
+      };
+    }
+
+    try {
+      const responseJson = (await response.json()) as SonarResponse;
+      
+      return {
+        urls: responseJson.citations ?? [],
+        related_questions: responseJson.related_questions ?? [],
+      };
+    } catch (error) {
+      console.error("Failed to parse Sonar response as JSON:", error);
+      return {
+        urls: [],
+        related_questions: [],
+      };
+    }
   }

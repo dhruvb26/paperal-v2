@@ -104,42 +104,52 @@ async function executeToolCall(toolCall: {
 }
 
 async function retrieveRelevantDocuments(state: typeof MessagesAnnotation.State) {
-  const content = state.messages[0]?.content as string;
-  const searchQuery = await generateQuestionForRag(content);
+  try {
+    const content = state.messages[0]?.content as string;
+    const searchQuery = await generateQuestionForRag(content);
 
-  const modelWithTools = responseModel.bindTools([vectorSearchTool]);
-  const initialResponse = await modelWithTools.invoke([
-    new SystemMessage("Use the vector_search tool with the given query."),
-    new HumanMessage(`Using the following search query: '${searchQuery}`),
-  ]);
+    const modelWithTools = responseModel.bindTools([vectorSearchTool]);
+    const initialResponse = await modelWithTools.invoke([
+      new SystemMessage("Use the vector_search tool with the given query."),
+      new HumanMessage(`Using the following search query: '${searchQuery}`),
+    ]);
 
-  const retrievedDocuments: string[] = [];
-  const toolCalls = initialResponse.tool_calls;
+    const retrievedDocuments: string[] = [];
+    const toolCalls = initialResponse.tool_calls;
 
-  if (toolCalls && toolCalls.length > 0) {
-    for (const toolCall of toolCalls) {
-      const toolResult = await executeToolCall({
-        function: { name: toolCall.name, arguments: JSON.stringify(toolCall.args) },
-      });
-      if (toolResult) {
-        retrievedDocuments.push(serializeToolResult(toolResult));
+    if (toolCalls && toolCalls.length > 0) {
+      for (const toolCall of toolCalls) {
+        const toolResult = await executeToolCall({
+          function: { name: toolCall.name, arguments: JSON.stringify(toolCall.args) },
+        });
+        if (toolResult) {
+          const resultStr = serializeToolResult(toolResult);
+          // Check if result is empty array or empty object
+          if (resultStr && resultStr !== "[]" && resultStr !== "{}") {
+            retrievedDocuments.push(resultStr);
+          }
+        }
+      }
+
+      if (retrievedDocuments.length > 0) {
+        const retrievedContext = JSON.stringify(retrievedDocuments);
+        return {
+          messages: [
+            ...state.messages,
+            new ToolMessage({
+              content: retrievedContext,
+              name: "vector_search",
+              tool_call_id: toolCalls[0]?.id ?? "tool_call",
+            }),
+          ],
+        };
       }
     }
-
-    const retrievedContext = JSON.stringify(retrievedDocuments);
-
-    return {
-      messages: [
-        ...state.messages,
-        new ToolMessage({
-          content: retrievedContext,
-          name: "vector_search",
-          tool_call_id: toolCalls[0]?.id ?? "tool_call",
-        }),
-      ],
-    };
+  } catch (error) {
+    console.error("Error retrieving documents:", error);
   }
 
+  // Default: no results found
   return {
     messages: [
       ...state.messages,
@@ -233,21 +243,33 @@ async function checkRelevance(
   }
 
   const retrievedContext = toolMessage.content as string;
-  if (retrievedContext === "No relevant documents found.") {
+  if (
+    retrievedContext === "No relevant documents found." ||
+    retrievedContext === "[]" ||
+    !retrievedContext ||
+    retrievedContext.trim() === ""
+  ) {
+    console.log("No relevant documents found, generating normal response");
     return { checkRelevance: "generate_normal" };
   }
 
-  const prompt = GRADE_PROMPT.replace("{question}", previousSentences).replace(
-    "{context}",
-    retrievedContext
-  );
+  try {
+    const prompt = GRADE_PROMPT.replace("{question}", previousSentences).replace(
+      "{context}",
+      retrievedContext
+    );
 
-  const structuredGrader = graderModel.withStructuredOutput(GradeDocumentsSchema);
-  const response = await structuredGrader.invoke([new HumanMessage(prompt)]);
+    const structuredGrader = graderModel.withStructuredOutput(GradeDocumentsSchema);
+    const response = await structuredGrader.invoke([new HumanMessage(prompt)]);
 
-  if (response.binaryScore === "yes") {
-    return { checkRelevance: "generate_with_rag" };
+    if (response.binaryScore === "yes") {
+      return { checkRelevance: "generate_with_rag" };
+    }
+  } catch (error) {
+    console.error("Error in checkRelevance:", error);
+    return { checkRelevance: "generate_normal" };
   }
+  
   return { checkRelevance: "generate_normal" };
 }
 

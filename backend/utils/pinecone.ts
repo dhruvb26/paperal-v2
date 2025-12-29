@@ -41,38 +41,62 @@ function getClient(): Pinecone {
 async function initializeIndexes(): Promise<void> {
   const pc = getClient();
 
-  const existingIndexes = await pc.listIndexes();
-  const indexNames = existingIndexes.indexes?.map((i) => i.name) ?? [];
+  try {
+    const existingIndexes = await pc.listIndexes();
+    const indexNames = existingIndexes.indexes?.map((i) => i.name) ?? [];
 
-  if (!indexNames.includes(INDEX_NAME)) {
-    await pc.createIndexForModel({
-      name: INDEX_NAME,
-      cloud: "aws",
-      region: "us-east-1",
-      embed: {
-        model: "llama-text-embed-v2",
-        fieldMap: { text: "text" },
-      },
-    });
+    // Try to create indexes if they don't exist
+    if (!indexNames.includes(INDEX_NAME)) {
+      try {
+        console.log(`Creating dense index: ${INDEX_NAME}`);
+        await pc.createIndexForModel({
+          name: INDEX_NAME,
+          cloud: "aws",
+          region: "us-east-1",
+          embed: {
+            model: "llama-text-embed-v2",
+            fieldMap: { text: "text" },
+          },
+        });
+        console.log(`Dense index ${INDEX_NAME} created, waiting for it to be ready...`);
+        // Wait a bit for index to initialize
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      } catch (error: any) {
+        console.error(`Failed to create dense index: ${error.message}`);
+        // Continue anyway, we'll try to use existing index
+      }
+    }
+
+    if (!indexNames.includes(SPARSE_INDEX_NAME)) {
+      try {
+        console.log(`Creating sparse index: ${SPARSE_INDEX_NAME}`);
+        await pc.createIndexForModel({
+          name: SPARSE_INDEX_NAME,
+          cloud: "aws",
+          region: "us-east-1",
+          embed: {
+            model: "pinecone-sparse-english-v0",
+            fieldMap: { text: "text" },
+          },
+        });
+        console.log(`Sparse index ${SPARSE_INDEX_NAME} created, waiting for it to be ready...`);
+        // Wait a bit for index to initialize
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      } catch (error: any) {
+        console.error(`Failed to create sparse index: ${error.message}`);
+        // Continue anyway, we'll try to use existing index
+      }
+    }
+
+    // Use index names directly - the SDK will resolve the correct host
+    denseIndex = pc.index(INDEX_NAME);
+    sparseIndex = pc.index(SPARSE_INDEX_NAME);
+    
+    console.log("Pinecone indexes initialized successfully");
+  } catch (error: any) {
+    console.error("Failed to initialize Pinecone indexes:", error.message);
+    throw error;
   }
-
-  if (!indexNames.includes(SPARSE_INDEX_NAME)) {
-    await pc.createIndexForModel({
-      name: SPARSE_INDEX_NAME,
-      cloud: "aws",
-      region: "us-east-1",
-      embed: {
-        model: "pinecone-sparse-english-v0",
-        fieldMap: { text: "text" },
-      },
-    });
-  }
-
-  const denseInfo = await pc.describeIndex(INDEX_NAME);
-  const sparseInfo = await pc.describeIndex(SPARSE_INDEX_NAME);
-
-  denseIndex = pc.index(denseInfo.host!);
-  sparseIndex = pc.index(sparseInfo.host!);
 }
 
 async function ensureInitialized(): Promise<{ dense: Index; sparse: Index }> {
@@ -144,19 +168,26 @@ export async function query(
   namespace: string,
   queryText: string
 ): Promise<MergedHit[]> {
-  const { dense, sparse } = await ensureInitialized();
+  try {
+    const { dense, sparse } = await ensureInitialized();
 
-  const [denseHits, sparseHits] = await Promise.all([
-    dense.namespace(namespace).searchRecords({
-      query: { inputs: { text: queryText }, topK: 3 },
-    }) as Promise<SearchResult>,
-    sparse.namespace(namespace).searchRecords({
-      query: { inputs: { text: queryText }, topK: 3 },
-    }) as Promise<SearchResult>,
-  ]);
+    const [denseHits, sparseHits] = await Promise.all([
+      dense.namespace(namespace).searchRecords({
+        query: { inputs: { text: queryText }, topK: 3 },
+      }) as Promise<SearchResult>,
+      sparse.namespace(namespace).searchRecords({
+        query: { inputs: { text: queryText }, topK: 3 },
+      }) as Promise<SearchResult>,
+    ]);
 
-  const merged = mergeAndDedupeHits(denseHits, sparseHits);
-  return rerankResults(merged, queryText);
+    const merged = mergeAndDedupeHits(denseHits, sparseHits);
+    return rerankResults(merged, queryText);
+  } catch (error: any) {
+    console.error("Error querying Pinecone:", error.message);
+    console.log("Returning empty results due to Pinecone error");
+    // Return empty results if Pinecone is not available
+    return [];
+  }
 }
 
 export async function upsertRecords(

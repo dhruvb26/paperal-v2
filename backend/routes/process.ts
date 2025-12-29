@@ -1,5 +1,8 @@
 type ProcessRequest = {
-    urls: string[];
+    topic: string;
+    searchResults: {
+      urls: string[];
+    };
   };
   
   type ProcessResponse = {
@@ -16,7 +19,7 @@ type ProcessRequest = {
     try {
       const body = (await req.json()) as ProcessRequest;
   
-      if (!body.urls || body.urls.length === 0) {
+      if (!body.searchResults?.urls || body.searchResults.urls.length === 0) {
         return Response.json(
           {
             success: false,
@@ -27,7 +30,7 @@ type ProcessRequest = {
         );
       }
   
-      console.log(`Processing ${body.urls.length} URLs.`);
+      console.log(`Processing ${body.searchResults.urls.length} URLs for topic: ${body.topic}`);
   
       return Response.json(
         {
