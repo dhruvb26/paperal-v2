@@ -13,7 +13,7 @@ import {
 import { validateUser } from '@/backend/actions/user'
 import type { Document } from '@/types/db'
 
-const api = env.API_URL!
+const api = 'http://localhost:3001'
 
 export async function createDocument(
   prompt: string

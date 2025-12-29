@@ -34,7 +34,7 @@ export const AutoComplete = Extension.create({
 
   addOptions() {
     return {
-      endpoint: `${process.env.API_URL}/generate`,
+      endpoint: 'http://localhost:3001/generate',
       applySuggestionKey: 'ArrowRight',
       suggestionDebounce: 1000,
       previousTextLength: 4000,
