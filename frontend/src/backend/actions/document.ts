@@ -22,7 +22,7 @@ export async function createDocument(
 
   const result = await user.asyncAndThen((userId: string) => {
     return ResultAsync.fromPromise(
-      fetch(`${api}/topic`, {
+      fetch(`http://localhost:3001/topic`, {
         method: 'POST',
         body: JSON.stringify({ query: prompt }),
         headers: { 'Content-Type': 'application/json' },

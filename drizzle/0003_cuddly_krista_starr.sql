@@ -1,1 +1,0 @@
-ALTER TABLE "files" ADD COLUMN IF NOT EXISTS "page_dimensions" jsonb;

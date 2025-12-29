@@ -1,1 +1,0 @@
-ALTER TABLE "documents" ADD COLUMN "user_id" varchar NOT NULL;
